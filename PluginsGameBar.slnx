@@ -1,0 +1,5 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/LosslessScaling.Companion/LosslessScaling.Companion.csproj" />
+  </Folder>
+</Solution>
