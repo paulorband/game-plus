@@ -1,9 +1,9 @@
 using System.IO;
 using System.Windows.Forms;
 using System.Xml.Serialization;
-using LosslessScaling.Companion.Models;
+using GamePlus.Models;
 
-namespace LosslessScaling.Companion.Services;
+namespace GamePlus.Services;
 
 public sealed class LosslessScalingSettingsService
 {

@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace LosslessScaling.Companion.Services;
+namespace GamePlus.Services;
 
 /// <summary>Picks the window that should get focus back (and be scaled): the foreground window, unless that's the shell
 /// (a folder, the desktop, the taskbar), this app or Lossless Scaling itself, in which case the topmost real window.</summary>
@@ -10,7 +10,7 @@ public static class GameWindowFinder
 {
     private static readonly HashSet<string> IgnoredProcesses = new(StringComparer.OrdinalIgnoreCase)
     {
-        "explorer", "LosslessScaling", "LosslessScaling.Companion", "SearchHost", "StartMenuExperienceHost", "ShellExperienceHost",
+        "explorer", "LosslessScaling", "GamePlus", "SearchHost", "StartMenuExperienceHost", "ShellExperienceHost",
     };
 
     public static IntPtr Find()

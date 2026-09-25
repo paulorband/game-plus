@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace LosslessScaling.Companion.Services;
+namespace GamePlus.Services;
 
 [Flags]
 public enum GamepadButton : ushort

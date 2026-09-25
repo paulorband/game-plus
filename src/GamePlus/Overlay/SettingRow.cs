@@ -1,6 +1,6 @@
 using System.ComponentModel;
 
-namespace LosslessScaling.Companion.Overlay;
+namespace GamePlus.Overlay;
 
 /// <summary>One option of a segmented control.</summary>
 public sealed record OptionItem(string Text, bool IsActive, Action Select);

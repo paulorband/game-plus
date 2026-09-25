@@ -1,5 +1,5 @@
 <Solution>
   <Folder Name="/src/">
-    <Project Path="src/LosslessScaling.Companion/LosslessScaling.Companion.csproj" />
+    <Project Path="src/GamePlus/GamePlus.csproj" />
   </Folder>
 </Solution>

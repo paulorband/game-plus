@@ -1,7 +1,7 @@
-<Window x:Class="LosslessScaling.Companion.Overlay.OverlayWindow"
+<Window x:Class="GamePlus.Overlay.OverlayWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Central de Jogo"
+        Title="Game Plus"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
@@ -305,7 +305,7 @@
                                 </Canvas>
                             </Viewbox>
                         </Border>
-                        <TextBlock Text="Central de Jogo" FontSize="17" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}" VerticalAlignment="Center"/>
+                        <TextBlock Text="Game Plus" FontSize="17" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}" VerticalAlignment="Center"/>
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">

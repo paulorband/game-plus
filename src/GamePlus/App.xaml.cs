@@ -1,11 +1,11 @@
 using System.Windows;
 using System.Windows.Forms;
-using LosslessScaling.Companion.Overlay;
-using LosslessScaling.Companion.Services;
+using GamePlus.Overlay;
+using GamePlus.Services;
 using Application = System.Windows.Application;
 using MessageBox = System.Windows.MessageBox;
 
-namespace LosslessScaling.Companion;
+namespace GamePlus;
 
 public partial class App : Application
 {
@@ -46,7 +46,7 @@ public partial class App : Application
             MessageBox.Show(
                 $"Não encontrei o Settings.xml do Lossless Scaling em:\n{LosslessScalingSettingsService.SettingsPath}\n\n" +
                 "Abra o Lossless Scaling pelo menos uma vez para gerar o arquivo de configurações, depois reinicie este app.",
-                "Lossless Scaling Companion",
+                "Game Plus",
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
         }
@@ -88,7 +88,7 @@ public partial class App : Application
         {
             Icon = LoadTrayIcon(),
             Visible = true,
-            Text = "Lossless Scaling Companion",
+            Text = "Game Plus",
             ContextMenuStrip = menu,
         };
         _trayIcon.DoubleClick += (_, _) => ShowOverlay();
@@ -120,7 +120,7 @@ public partial class App : Application
         }
         catch (Exception ex)
         {
-            _trayIcon.ShowBalloonTip(2000, "Lossless Scaling Companion", $"Falha ao alternar: {ex.Message}", ToolTipIcon.Error);
+            _trayIcon.ShowBalloonTip(2000, "Game Plus", $"Falha ao alternar: {ex.Message}", ToolTipIcon.Error);
         }
     }
 
@@ -165,7 +165,7 @@ public partial class App : Application
         catch (Exception ex)
         {
             Log.Error("ShowOverlay", ex);
-            _trayIcon.ShowBalloonTip(4000, "Lossless Scaling Companion", $"Não foi possível abrir o overlay: {ex.Message}", ToolTipIcon.Error);
+            _trayIcon.ShowBalloonTip(4000, "Game Plus", $"Não foi possível abrir o overlay: {ex.Message}", ToolTipIcon.Error);
             _overlay = null;
         }
     }

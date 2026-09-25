@@ -1,7 +1,7 @@
 using System.Windows.Threading;
-using LosslessScaling.Companion.Models;
+using GamePlus.Models;
 
-namespace LosslessScaling.Companion.Services;
+namespace GamePlus.Services;
 
 /// <summary>
 /// Polls up to 4 XInput controllers, merges them into one logical pad (any connected

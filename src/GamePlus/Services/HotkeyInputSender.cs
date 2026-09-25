@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
-namespace LosslessScaling.Companion.Services;
+namespace GamePlus.Services;
 
 /// <summary>
 /// Sends the Lossless Scaling toggle hotkey as a real global keystroke via SendInput,

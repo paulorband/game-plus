@@ -1,7 +1,7 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!-- Central de Jogo: design tokens (overlay-design.html) -->
+    <!-- Game Plus: design tokens (overlay-design.html) -->
     <Color x:Key="PanelColor">#F00E1118</Color>
     <Color x:Key="Surface1Color">#141922</Color>
     <Color x:Key="Surface2Color">#1A202B</Color>

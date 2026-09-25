@@ -1,6 +1,6 @@
 using System.IO;
 
-namespace LosslessScaling.Companion.Services;
+namespace GamePlus.Services;
 
 /// <summary>Minimal file log next to the exe (Data\app.log), used to diagnose problems on other machines.</summary>
 public static class Log

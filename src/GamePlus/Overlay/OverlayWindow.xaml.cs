@@ -1,10 +1,10 @@
 using System.Windows;
-using LosslessScaling.Companion.Models;
-using LosslessScaling.Companion.Services;
+using GamePlus.Models;
+using GamePlus.Services;
 using Key = System.Windows.Input.Key;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 
-namespace LosslessScaling.Companion.Overlay;
+namespace GamePlus.Overlay;
 
 public partial class OverlayWindow : Window
 {

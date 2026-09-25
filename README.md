@@ -1,4 +1,4 @@
-# Lossless Scaling Companion
+# Game Plus
 
 App de bandeja para Windows que permite **ligar/desligar o Lossless Scaling** e
 **editar suas configurações de geração de quadros** usando só o controle do Xbox,
@@ -58,20 +58,20 @@ overlay.
 Requer .NET 10 SDK (Windows) com workload de desktop.
 
 ```bash
-dotnet build src/LosslessScaling.Companion/LosslessScaling.Companion.csproj -c Release
+dotnet build src/GamePlus/GamePlus.csproj -c Release
 ```
 
 O executável fica em
-`src/LosslessScaling.Companion/bin/Release/net10.0-windows/win-x64/LosslessScaling.Companion.exe`.
+`src/GamePlus/bin/Release/net10.0-windows/win-x64/GamePlus.exe`.
 
 ### Versão portátil (sem instalar o .NET)
 
 ```bash
-dotnet publish src/LosslessScaling.Companion -p:PublishProfile=Portable
+dotnet publish src/GamePlus -p:PublishProfile=Portable
 ```
 
 Gera a pasta `publish/` (~173 MB) com o runtime embarcado. Copie a **pasta inteira**
-para outro PC e abra o `LosslessScaling.Companion.exe`; `config.json`, `Data\` (cópia
+para outro PC e abra o `GamePlus.exe`; `config.json`, `Data\` (cópia
 das configs do Lossless Scaling) e `Data\app.log` ficam ao lado do `.exe`.
 
 Não use arquivo único (`PublishSingleFile`): no ROG Xbox Ally X o overlay não abria

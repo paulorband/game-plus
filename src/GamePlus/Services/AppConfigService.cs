@@ -1,8 +1,8 @@
 using System.IO;
 using System.Text.Json;
-using LosslessScaling.Companion.Models;
+using GamePlus.Models;
 
-namespace LosslessScaling.Companion.Services;
+namespace GamePlus.Services;
 
 public sealed class AppConfigService
 {

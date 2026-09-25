@@ -1,4 +1,4 @@
-namespace LosslessScaling.Companion.Models;
+namespace GamePlus.Models;
 
 public sealed class AppConfig
 {

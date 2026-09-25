@@ -10,8 +10,8 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>app.ico</ApplicationIcon>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
-    <AssemblyName>LosslessScaling.Companion</AssemblyName>
-    <RootNamespace>LosslessScaling.Companion</RootNamespace>
+    <AssemblyName>GamePlus</AssemblyName>
+    <RootNamespace>GamePlus</RootNamespace>
     <Platforms>x64</Platforms>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SelfContained>false</SelfContained>

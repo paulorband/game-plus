@@ -1,9 +1,9 @@
 using System.Diagnostics;
 using System.IO;
-using LosslessScaling.Companion.Models;
+using GamePlus.Models;
 using Microsoft.Win32;
 
-namespace LosslessScaling.Companion.Services;
+namespace GamePlus.Services;
 
 public sealed class LosslessScalingProcessService
 {

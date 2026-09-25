@@ -1,6 +1,6 @@
 using System.Xml.Serialization;
 
-namespace LosslessScaling.Companion.Models;
+namespace GamePlus.Models;
 
 [XmlRoot("Settings", Namespace = "")]
 public sealed class LosslessScalingSettings
