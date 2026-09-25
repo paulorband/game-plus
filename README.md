@@ -135,3 +135,7 @@ LSFGSizeEnum`). Se isso acontecer de novo, restaure o `Settings.xml.bak` ou:
 - O toggle simula a hotkey configurada dentro do próprio Lossless Scaling; se
   você mudar essa hotkey por lá, o companion acompanha automaticamente (lê o
   arquivo a cada acionamento), sem precisar reconfigurar nada aqui.
+
+## Para quem desenvolve
+
+Estrutura, padrões e regras do projeto estão em [CLAUDE.md](CLAUDE.md).
