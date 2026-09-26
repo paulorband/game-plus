@@ -46,12 +46,19 @@ src/GamePlus/
   app.ico / app.manifest      ícone (16/32/48/256) e manifest
   Models/
     AppConfig.cs              config.json (combos, intervalos, caminho do LS...)
+    MonitoringConfig.cs       Data\monitoring.json (métricas ligadas, GPU, posição 0-8, tamanho) + MetricKeys
     LosslessScalingSettings.cs  modelo do Settings.xml do LS (XmlSerializer)
   Services/                   lógica sem UI
     GamepadService.cs         polling XInput, eventos de botão e combos
     XInputInterop.cs          P/Invoke do XInput, enum GamepadButton
     HotkeyInputSender.cs      SendInput, foreground, diagnóstico de janelas
     GameWindowFinder.cs       escolhe a janela do jogo para devolver o foco
+    MonitoringConfigService.cs  lê/grava Data\monitoring.json
+    Monitoring/               monitoramento (Afterburner + RTSS), sem UI
+      MahmReader.cs           sensores do Afterburner (memória compartilhada MAHM, somente leitura)
+      RtssClient.cs           FPS do jogo + escrita do OSD no slot próprio do RTSS
+      RamInfoProvider.cs      velocidade da RAM via tabelas SMBIOS (sem WMI/admin)
+      MonitoringService.cs    loop de 500 ms: lê, monta o texto com tags do RTSS e escreve; expõe Status
     LosslessScalingProcessService.cs  achar/abrir/reiniciar o LS, detectar "escalando", link da Steam
     LosslessScalingSettingsService.cs Settings.xml + cópia local + sincronização
     AppConfigService.cs       lê/grava config.json ao lado do exe
@@ -98,8 +105,8 @@ Regras visuais:
 
 ## Controle: regras que não podem quebrar
 
-Mapeamento no overlay: D-Pad ↑↓ move a seleção, ←→ altera o valor, **A** confirma/aumenta, **B** fecha, **X** reinicia o LS,
-**Y** salva, **LB/RB** troca de perfil. Combos globais (`config.json`): `ToggleCombo` = View+L3, `OverlayCombo` = View+Menu.
+Mapeamento no overlay: D-Pad ou analógico esquerdo (virtual D-Pad em `GamepadService`, com histerese e um eixo por vez) ↑↓ move a seleção com volta circular e repetição ao segurar, ←→ altera o valor (em campos com mais de 2 valores, segurar só pré-visualiza: `Preview`/`Commit` na linha, aplicado ao soltar; A e teclado aplicam na hora), **A** confirma/aumenta, **B** fecha, **X** reinicia o LS,
+**Y** salva, **LB/RB** troca de categoria, **LT/RT** troca de perfil do LS (os gatilhos viram botões `LeftTrigger`/`RightTrigger` em `GamepadService`). Combos globais (`config.json`): `ToggleCombo` = View+L3, `OverlayCombo` = View+Menu.
 
 1. **Combos disparam uma vez por aperto** (latch até soltar). Segurar não pode repetir a ação.
 2. **Fechar o overlay só depois de soltar os botões** (`CloseAfterReleaseAsync`): o jogo recupera o foco na hora e um botão ainda
@@ -120,6 +127,36 @@ Mapeamento no overlay: D-Pad ↑↓ move a seleção, ←→ altera o valor, **A
   geração continue. Por isso o overlay lê o estado **antes** de tomar o foco (`InitialScaling`) e mantém esse valor enquanto aberto.
 - Ligar tem contagem de 3 s (cancelável com A) e, se o LS estiver fechado, abre o LS primeiro; desligar é imediato e não fecha o overlay.
 - Sem o LS instalado, o card vira alerta com botão para a página da Steam (`steam://store/993090`, com fallback para a web).
+
+## Monitoramento (Afterburner + RTSS)
+
+Categoria "Monitoramento": `MonitoringService` (criado em `App`, roda em loop próprio, então o OSD funciona com o overlay fechado)
+lê os sensores do Afterburner e escreve o texto num slot de OSD do RTSS. Tudo sem administrador.
+
+- **Memórias compartilhadas**: `MAHMSharedMemory` (só leitura; assinatura 0x4D41484D) e `RTSSSharedMemoryV2` (leitura/escrita;
+  assinatura 0x52545353, versão 2.21 aqui). Nomes dos sensores vêm do Afterburner (`GPU2 temperature`...); `FLT_MAX` = sem dado.
+  Assinatura/versão desconhecida = "indisponível", nunca exceção.
+- **Slot do OSD**: o slot 0 é do Afterburner; usamos o primeiro livre a partir do 1 com dono `GamePlus` e liberamos ao desligar/sair.
+  Respeitar `dwBusy` ao escrever e incrementar `dwOSDFrame`. Gráficos de FPS/frametime são objetos embutidos (`<OBJ=offset>`).
+- **Posição e tamanho** vão no texto por tags do RTSS (`<Pn><L0>` e `<S=percentual>`; `<S=0>` esconde o texto); validar visualmente ao mudar.
+- **Estado no overlay**: `MonitoringStatus` (Afterburner/RTSS conectados, GPUs, métricas disponíveis, jogo). Linhas sem sensor ficam
+  esmaecidas com o motivo (`HintWhen`). Com Afterburner/RTSS fechados, ligar o cartão os inicia (`AfterburnerLauncher`, feedback "Abrindo o MSI Afterburner…" como no LS) e só então liga a exibição; sem o Afterburner instalado o cartão vira alerta sem interruptor.
+- FPS é o do jogo (RTSS), ignorando `GamePlus.exe` e `LosslessScaling.exe`.
+- **Nomes de sensor dependem do PC** (aprendido no Ally): o Afterburner só numera os sensores de GPU (`GPU1 temperature`,
+  `GPU2 usage`...) quando há mais de uma GPU; com uma só (Ally) os nomes são `GPU temperature`, `GPU usage`... Por isso `Gs()` cai
+  para o nome sem número. Mesmo assim, `core clock`, `memory usage` e `power` não apareciam no Ally por outras diferenças de nome,
+  então `MahmReader` também indexa os sensores de GPU pelo **id de origem estável** (entrada @1320: temperatura 0, uso 48, clock 32,
+  VRAM 49, consumo 97, tensão 64) com o índice de GPU (@1316) e cria o apelido `GPU{n} {sensor}`. Não confie só em nomes de sensor.
+- **Diagnóstico**: na primeira leitura o `MahmReader` grava em `Data\app.log` a lista completa (`MAHM sensors: nome|unidade|gpu=|id=|valor`).
+  Peça esse log ao investigar "métrica não aparece" em outro hardware.
+- **Hardware AMD não tem tensão de GPU** (o Afterburner não expõe): a linha fica esmaecida com "Indisponível neste hardware". É esperado.
+- Unidades: RAM e VRAM em **MB** (o sensor `RAM usage` já vem em MB); velocidade da RAM em MT/s via SMBIOS (`RamInfoProvider`).
+- **Largura dos gráficos** (`GraphWidth`, 8-48 caracteres, padrão 32) vai na largura negativa do objeto de gráfico do RTSS.
+- **Cores por grupo** (GPU, CPU, RAM, FPS, Frametime; `Colors[grupo] = {Label, Value}` em `monitoring.json`, "RRGGBB") vão como `<C=RRGGBB>`; a tela escolhe o grupo e edita o rótulo/valor dele. Presets nomeados (`ColorPresets`) mais
+  sliders R/G/B para qualquer cor; um valor que não seja hex de 6 dígitos volta ao padrão ao carregar.
+## Instância única
+
+`App.OnStartup` cria o evento nomeado `Local\GamePlus.Show`. Quem o cria é a instância principal (escuta o sinal numa thread e chama `ShowOverlay`); uma segunda execução do exe só sinaliza e encerra, abrindo a janela como "Abrir configurações".
 
 ## Portabilidade e dados
 
@@ -161,5 +198,4 @@ Mapeamento no overlay: D-Pad ↑↓ move a seleção, ←→ altera o valor, **A
 
 ## Roadmap (ainda não implementado — definido no design system)
 
-Monitoramento (Afterburner), Sistema, Perfis, Sobre, chip com o nome do jogo, seletor de posição 3×3, repetição ao segurar ←/→
-e passos maiores com LT/RT. Ao implementar, siga a seção "Overlay" acima e atualize este guia e o README.
+Sistema, Perfis, Sobre, chip com o nome do jogo, repetição ao segurar ←/→ e passos maiores. Ao implementar, siga a seção "Overlay" acima e atualize este guia e o README.

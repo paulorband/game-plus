@@ -138,6 +138,26 @@
         </Style.Triggers>
     </Style>
 
+    <!-- One cell of the 3x3 screen-position picker -->
+    <Style x:Key="PositionCell" TargetType="Button" BasedOn="{StaticResource PlainButton}">
+        <Setter Property="Width" Value="26"/>
+        <Setter Property="Height" Value="20"/>
+        <Setter Property="Margin" Value="2"/>
+        <Setter Property="Background" Value="#252E3D"/>
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding IsActive}" Value="True">
+                <Setter Property="Background" Value="{StaticResource Text2Brush}"/>
+            </DataTrigger>
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding IsActive}" Value="True"/>
+                    <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True"/>
+                </MultiDataTrigger.Conditions>
+                <Setter Property="Background" Value="{StaticResource AccentBrush}"/>
+            </MultiDataTrigger>
+        </Style.Triggers>
+    </Style>
+
     <!-- Thin vertical scrollbar -->
     <Style TargetType="ScrollBar">
         <Setter Property="Width" Value="4"/>

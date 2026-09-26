@@ -41,10 +41,11 @@ real, a lógica de controle/settings deste projeto pode ser reaproveitada.
 
 | Botão | Ação |
 |---|---|
-| D-Pad Cima/Baixo | Mover seleção entre os campos |
-| D-Pad Esquerda | Diminuir/ciclar valor |
-| D-Pad Direita / A | Aumentar/ciclar valor |
-| LB / RB | Trocar de perfil (quando há mais de um) |
+| D-Pad ou analógico esquerdo Cima/Baixo | Mover seleção entre os campos (segurar repete; passa do último para o primeiro e vice-versa) |
+| D-Pad ou analógico Esquerda | Diminuir/ciclar valor (segurar percorre os valores e aplica ao soltar, em campos com mais de 2 opções) |
+| D-Pad ou analógico Direita / A | Aumentar/ciclar valor (A aplica na hora) |
+| LB / RB | Trocar de categoria (Lossless Scaling / Monitoramento) |
+| LT / RT | Trocar de perfil do Lossless Scaling (quando há mais de um) |
 | Y | Salvar no Settings.xml |
 | X | Reiniciar o Lossless Scaling manualmente |
 | B / View+Menu de novo | Fechar o overlay |
@@ -52,6 +53,24 @@ real, a lógica de controle/settings deste projeto pode ser reaproveitada.
 Os combos de abrir o overlay e ligar/desligar foram escolhidos justamente para
 **não colidir** com A/B/X/Y/LB/RB/D-Pad, que são usados na navegação do
 overlay.
+
+## Monitoramento (MSI Afterburner + RTSS)
+
+A categoria **Monitoramento** mostra sobre o jogo temperatura, uso, frequência,
+consumo e tensão de CPU/GPU, RAM e VRAM, FPS atual, média (AVG) e frametime,
+com ou sem gráfico. Você escolhe a GPU, o canto da tela (grade 3x3), o tamanho
+do texto, a largura dos gráficos e as cores de cada grupo (GPU, CPU, RAM, FPS, frametime), rótulo e valores separados (cores prontas ou qualquer cor
+por sliders R/G/B), tudo pelo controle.
+(Sensores que o hardware não tem, como a tensão de GPUs AMD, aparecem esmaecidos.)
+
+- Requer o **MSI Afterburner** e o **RTSS** (o RTSS vem com o Afterburner). Se estiverem fechados, ligar o monitoramento abre os dois.
+  O Game Plus lê os sensores do Afterburner e desenha o texto pelo RTSS, sem
+  precisar de administrador e sem editar arquivos do Afterburner.
+- Para não duplicar informações, desligue o OSD do próprio Afterburner.
+- Sensores que o hardware não expõe (ex.: tensão da CPU em alguns Ryzen) aparecem
+  esmaecidos como "indisponível neste hardware".
+- O FPS é o do jogo (o RTSS não mede os quadros gerados pelo Lossless Scaling).
+- As preferências ficam em `Data\monitoring.json`, ao lado do `.exe`.
 
 ## Build e execução
 
@@ -78,7 +97,7 @@ Não use arquivo único (`PublishSingleFile`): no ROG Xbox Ally X o overlay não
 com ele, mesmo sem compressão. Alternativa menor (~300 KB), que exige o
 .NET Desktop Runtime 10 instalado: `-p:SelfContained=false -p:PublishSingleFile=true`.
 
-Rode-o normalmente (ele minimiza direto para a bandeja do sistema). Pelo menu
+Rode-o normalmente (ele minimiza direto para a bandeja do sistema). O app roda em instância única: abrir o .exe de novo só abre a janela do que já está rodando. Pelo menu
 da bandeja dá pra:
 
 - Abrir as configurações (também com duplo clique no ícone)

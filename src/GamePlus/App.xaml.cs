@@ -14,13 +14,31 @@ public partial class App : Application
     private LosslessScalingSettingsService _settingsService = null!;
     private LosslessScalingProcessService _processService = null!;
     private GamepadService _gamepad = null!;
+    private Services.Monitoring.MonitoringService _monitoring = null!;
     private NotifyIcon _trayIcon = null!;
     private OverlayWindow? _overlay;
+    private EventWaitHandle? _showSignal;
 
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
+        // Single instance: a second launch just asks the running one to show its window, like "Abrir configurações".
+        // Per-session name, so another signed-in user can run their own copy.
+        _showSignal = new EventWaitHandle(false, EventResetMode.AutoReset, @"Local\GamePlus.Show", out var firstInstance);
+        if (!firstInstance)
+        {
+            Log.Info("Already running; asking the first instance to show itself");
+            try { _showSignal.Set(); } catch (Exception ex) { Log.Error("Signal first instance", ex); }
+            Shutdown();
+            return;
+        }
+        var listener = new Thread(() =>
+        {
+            while (_showSignal.WaitOne()) Dispatcher.BeginInvoke(ShowOverlay);
+        }) { IsBackground = true, Name = "SingleInstanceListener" };
+        listener.Start();
 
         // Errors raised from tray-menu callbacks would otherwise vanish (or hide behind a fullscreen shell).
         System.Windows.Forms.Application.ThreadException += (_, args) => Log.Error("WinForms ThreadException", args.Exception);
@@ -50,6 +68,9 @@ public partial class App : Application
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
         }
+
+        _monitoring = new Services.Monitoring.MonitoringService(new MonitoringConfigService());
+        _monitoring.Start();
 
         _gamepad = new GamepadService(_config);
         _gamepad.ToggleComboTriggered += OnToggleComboTriggered;
@@ -149,7 +170,7 @@ public partial class App : Application
                 var game = GameWindowFinder.Find();
                 // LS drops its scaling windows once the game loses focus, so read the state before the overlay steals it.
                 var scaling = _processService.IsScaling;
-                _overlay = new OverlayWindow(_settingsService, _processService, _config, _gamepad)
+                _overlay = new OverlayWindow(_settingsService, _processService, _config, _gamepad, _monitoring)
                 {
                     PreviousForegroundWindow = game,
                     InitialScaling = scaling,
@@ -172,9 +193,10 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
-        _gamepad.Dispose();
-        _trayIcon.Visible = false;
-        _trayIcon.Dispose();
+        _monitoring?.Dispose();
+        _gamepad?.Dispose();
+        if (_trayIcon is not null) _trayIcon.Visible = false;
+        _trayIcon?.Dispose();
         base.OnExit(e);
     }
 }

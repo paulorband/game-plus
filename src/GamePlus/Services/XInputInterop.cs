@@ -16,6 +16,9 @@ public enum GamepadButton : ushort
     RightThumb = 0x0080,
     LeftShoulder = 0x0100,
     RightShoulder = 0x0200,
+    // The triggers are analog in XInput; the poller reports them as buttons past a threshold (bits XInput leaves unused).
+    LeftTrigger = 0x0400,
+    RightTrigger = 0x0800,
     A = 0x1000,
     B = 0x2000,
     X = 0x4000,

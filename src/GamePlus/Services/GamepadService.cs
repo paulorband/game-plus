@@ -1,4 +1,4 @@
-using System.Windows.Threading;
+﻿using System.Windows.Threading;
 using GamePlus.Models;
 
 namespace GamePlus.Services;
@@ -28,6 +28,12 @@ public sealed class GamepadService : IDisposable
 
     /// <summary>Fires once when a tracked button transitions from up to down. Only used while the overlay is open.</summary>
     public event Action<GamepadButton>? ButtonPressed;
+
+    /// <summary>Fires once when a button goes from down to up.</summary>
+    public event Action<GamepadButton>? ButtonReleased;
+
+    /// <summary>Fires repeatedly while a direction (D-Pad or left stick) stays held, after an initial delay.</summary>
+    public event Action<GamepadButton>? ButtonRepeated;
 
     /// <summary>Fires once the toggle combo has been held for the configured duration.</summary>
     public event Action? ToggleComboTriggered;
@@ -71,22 +77,46 @@ public sealed class GamepadService : IDisposable
         AnyControllerConnected = connected;
 
         var pressedNow = buttons & ~_previousButtons;
-        if (pressedNow != GamepadButton.None)
-        {
-            foreach (GamepadButton flag in Enum.GetValues<GamepadButton>())
-            {
-                if (flag != GamepadButton.None && pressedNow.HasFlag(flag))
-                {
-                    ButtonPressed?.Invoke(flag);
-                }
-            }
-        }
+        foreach (var flag in Flags(pressedNow)) ButtonPressed?.Invoke(flag);
 
         var now = DateTime.UtcNow;
+        RepeatDirections(buttons, pressedNow, now);
+        foreach (var flag in Flags(_previousButtons & ~buttons)) ButtonReleased?.Invoke(flag);
+
         EvaluateCombo(buttons, _toggleCombo, ref _toggleHeldSince, ref _toggleCooldownUntil, now, ToggleComboTriggered);
         EvaluateCombo(buttons, _overlayCombo, ref _overlayHeldSince, ref _overlayCooldownUntil, now, OverlayComboTriggered);
 
         _previousButtons = buttons;
+    }
+
+    private static IEnumerable<GamepadButton> Flags(GamepadButton buttons)
+    {
+        if (buttons == GamepadButton.None) yield break;
+        foreach (var flag in Enum.GetValues<GamepadButton>())
+            if (flag != GamepadButton.None && buttons.HasFlag(flag)) yield return flag;
+    }
+
+    // Like keyboard auto-repeat: a first delay, then a steady rhythm (horizontal is slower, it changes values).
+    private const int RepeatDelayMs = 400, VerticalRepeatMs = 110, HorizontalRepeatMs = 140;
+    private static readonly GamepadButton[] Directions = [GamepadButton.DPadUp, GamepadButton.DPadDown, GamepadButton.DPadLeft, GamepadButton.DPadRight];
+    private readonly Dictionary<GamepadButton, DateTime> _nextRepeat = new();
+
+    private void RepeatDirections(GamepadButton buttons, GamepadButton pressedNow, DateTime now)
+    {
+        foreach (var direction in Directions)
+        {
+            if (!buttons.HasFlag(direction)) continue;
+            if (pressedNow.HasFlag(direction))
+            {
+                _nextRepeat[direction] = now.AddMilliseconds(RepeatDelayMs);
+            }
+            else if (_nextRepeat.TryGetValue(direction, out var due) && now >= due)
+            {
+                var vertical = direction is GamepadButton.DPadUp or GamepadButton.DPadDown;
+                _nextRepeat[direction] = now.AddMilliseconds(vertical ? VerticalRepeatMs : HorizontalRepeatMs);
+                ButtonRepeated?.Invoke(direction);
+            }
+        }
     }
 
     private void EvaluateCombo(
@@ -125,10 +155,35 @@ public sealed class GamepadService : IDisposable
         }
     }
 
-    private static GamepadButton ReadMergedButtons(out bool anyConnected)
+    private const byte TriggerThreshold = 100;
+
+    // The left stick doubles as a D-Pad: pressed past StickPress, released below StickRelease (hysteresis avoids flicker).
+    private const int StickPress = 16000, StickRelease = 9000;
+    private int _stickX, _stickY;
+
+    private static int Latch(int current, int value) =>
+        current == 0 ? (value > StickPress ? 1 : value < -StickPress ? -1 : 0)
+        : (Math.Sign(value) != current || Math.Abs(value) < StickRelease ? 0 : current);
+
+    private GamepadButton StickAsDPad(int x, int y)
+    {
+        // One axis at a time (the dominant one), so a diagonal push doesn't fire two directions.
+        if (Math.Abs(x) >= Math.Abs(y)) y = 0; else x = 0;
+        _stickX = Latch(_stickX, x);
+        _stickY = Latch(_stickY, y);
+        var result = GamepadButton.None;
+        if (_stickX < 0) result |= GamepadButton.DPadLeft;
+        if (_stickX > 0) result |= GamepadButton.DPadRight;
+        if (_stickY > 0) result |= GamepadButton.DPadUp;
+        if (_stickY < 0) result |= GamepadButton.DPadDown;
+        return result;
+    }
+
+    private GamepadButton ReadMergedButtons(out bool anyConnected)
     {
         GamepadButton merged = GamepadButton.None;
         anyConnected = false;
+        int stickX = 0, stickY = 0;
 
         for (int i = 0; i < 4; i++)
         {
@@ -136,10 +191,14 @@ public sealed class GamepadService : IDisposable
             {
                 anyConnected = true;
                 merged |= state.Gamepad.Buttons;
+                if (state.Gamepad.LeftTrigger > TriggerThreshold) merged |= GamepadButton.LeftTrigger;
+                if (state.Gamepad.RightTrigger > TriggerThreshold) merged |= GamepadButton.RightTrigger;
+                if (Math.Abs((int)state.Gamepad.ThumbLX) > Math.Abs(stickX)) stickX = state.Gamepad.ThumbLX;
+                if (Math.Abs((int)state.Gamepad.ThumbLY) > Math.Abs(stickY)) stickY = state.Gamepad.ThumbLY;
             }
         }
 
-        return merged;
+        return merged | StickAsDPad(stickX, stickY);
     }
 
     public void Dispose() => _timer.Stop();
