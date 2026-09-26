@@ -298,6 +298,8 @@ public partial class OverlayWindow : Window
         [
             new EnumSettingRow("Tema", [ThemeManager.Dark, ThemeManager.Light], () => ThemeManager.Normalize(s.Theme),
                 v => { s.Theme = v; _appSettings.Save(); }, ["Escuro", "Claro"]) { Section = "Aparência" },
+            new IntSettingRow("Opacidade do painel", () => s.PanelOpacity, v => { s.PanelOpacity = v; _appSettings.Save(); }, 50, 100, 5, "%", slider: true)
+                { Hint = "Menor = mais transparente, o jogo aparece atrás" },
             new BoolSettingRow("Iniciar com o Windows", StartupRegistration.IsEnabled, StartupRegistration.SetEnabled) { Section = "Inicialização" },
             new EnumSettingRow("Ao iniciar", ["window", "tray"], () => s.StartInTray ? "tray" : "window",
                 v => { s.StartInTray = v == "tray"; _appSettings.Save(); }, ["Abrir a janela", "Só na bandeja"]),

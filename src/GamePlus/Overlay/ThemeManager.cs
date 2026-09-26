@@ -12,16 +12,27 @@ public static class ThemeManager
 
     public static string Normalize(string? theme) => theme == Light ? Light : Dark;
 
-    public static void Apply(string? theme)
+    /// <param name="panelOpacity">Opacity of the overlay panel in percent (only the panel background, never the text).</param>
+    public static void Apply(string? theme, int panelOpacity)
     {
         var name = Normalize(theme) == Light ? "Light" : "Dark";
-        var dictionaries = System.Windows.Application.Current.Resources.MergedDictionaries;
+        var resources = System.Windows.Application.Current.Resources;
+        var dictionaries = resources.MergedDictionaries;
 
         var current = dictionaries.FirstOrDefault(d => d.Source?.OriginalString.Contains("Colors.") == true);
-        var index = current is null ? 0 : dictionaries.IndexOf(current);
-        if (current is not null && current.Source!.OriginalString.EndsWith($"Colors.{name}.xaml")) return;
-        if (current is not null) dictionaries.Remove(current);
+        if (current is null || !current.Source!.OriginalString.EndsWith($"Colors.{name}.xaml"))
+        {
+            var index = current is null ? 0 : dictionaries.IndexOf(current);
+            if (current is not null) dictionaries.Remove(current);
+            current = new ResourceDictionary { Source = new Uri($"Overlay/Themes/Colors.{name}.xaml", UriKind.Relative) };
+            dictionaries.Insert(index, current);
+        }
 
-        dictionaries.Insert(index, new ResourceDictionary { Source = new Uri($"Overlay/Themes/Colors.{name}.xaml", UriKind.Relative) });
+        // The panel color comes from the theme; only its alpha is the user's. An entry on the app itself shadows the merged one.
+        var panel = ((SolidColorBrush)current["PanelBrush"]).Color;
+        var alpha = (byte)Math.Round(Math.Clamp(panelOpacity, 0, 100) * 255 / 100.0);
+        var brush = new SolidColorBrush(System.Windows.Media.Color.FromArgb(alpha, panel.R, panel.G, panel.B));
+        brush.Freeze();
+        resources["PanelBrush"] = brush;
     }
 }

@@ -97,8 +97,8 @@ public partial class App : Application
         }
     }
 
-    // Theme is an app-wide resource, so it is applied here rather than by any one window.
-    private void ApplyAppearance() => ThemeManager.Apply(_appSettings.Current.Theme);
+    // Theme and panel opacity are app-wide resources, so they are applied here rather than by any one window.
+    private void ApplyAppearance() => ThemeManager.Apply(_appSettings.Current.Theme, _appSettings.Current.PanelOpacity);
 
     private void SetupTrayIcon()
     {

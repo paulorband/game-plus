@@ -29,7 +29,11 @@ public sealed class AppSettingsService
             if (File.Exists(ConfigPath))
             {
                 var settings = JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(ConfigPath), JsonOptions);
-                if (settings is not null) return settings;
+                if (settings is not null)
+                {
+                    settings.PanelOpacity = Math.Clamp(settings.PanelOpacity, 50, 100);
+                    return settings;
+                }
             }
         }
         catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)

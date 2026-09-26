@@ -6,6 +6,9 @@ public sealed class AppSettings
     /// <summary>"dark" or "light".</summary>
     public string Theme { get; set; } = "dark";
 
+    /// <summary>Opacity of the overlay panel, 50-100 percent.</summary>
+    public int PanelOpacity { get; set; } = 95;
+
     /// <summary>Launch straight to the tray instead of opening the window.</summary>
     public bool StartInTray { get; set; }
 
