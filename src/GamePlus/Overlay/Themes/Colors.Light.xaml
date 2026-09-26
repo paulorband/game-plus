@@ -1,0 +1,43 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Game Plus Light theme (overlay-design.html). Same keys as the other theme: every brush must exist in both. -->
+    <SolidColorBrush x:Key="PanelBrush" Color="#F2F7F9FC"/>
+    <SolidColorBrush x:Key="PageBrush" Color="#E9EDF3"/>
+    <SolidColorBrush x:Key="Surface1Brush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="Surface2Brush" Color="#E9EDF4"/>
+    <SolidColorBrush x:Key="Surface3Brush" Color="#D9E0EB"/>
+    <SolidColorBrush x:Key="TextBrush" Color="#141A24"/>
+    <SolidColorBrush x:Key="Text2Brush" Color="#465266"/>
+    <SolidColorBrush x:Key="Text3Brush" Color="#5F6B7E"/>
+    <SolidColorBrush x:Key="AccentBrush" Color="#0A8460"/>
+    <SolidColorBrush x:Key="OnAccentBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="FocusBrush" Color="#0E1118"/>
+    <SolidColorBrush x:Key="OnFocusBrush" Color="#F2F6FF"/>
+    <SolidColorBrush x:Key="LineBrush" Color="#170E1118"/>
+    <SolidColorBrush x:Key="Line2Brush" Color="#2E0E1118"/>
+    <SolidColorBrush x:Key="KeyBrush" Color="#D2D9E5"/>
+    <SolidColorBrush x:Key="HoverBrush" Color="#140E1118"/>
+    <SolidColorBrush x:Key="SwitchOffBrush" Color="#B4BECD"/>
+    <SolidColorBrush x:Key="KnobBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="KnobOnBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="TrackBrush" Color="#C3CBD8"/>
+    <SolidColorBrush x:Key="RailBrush" Color="#060E1118"/>
+    <SolidColorBrush x:Key="FooterBrush" Color="#0D0E1118"/>
+    <SolidColorBrush x:Key="PillBrush" Color="#120E1118"/>
+    <SolidColorBrush x:Key="ScrollTrackBrush" Color="#0F0E1118"/>
+    <SolidColorBrush x:Key="ScrollThumbBrush" Color="#520E1118"/>
+    <SolidColorBrush x:Key="PositionCellBrush" Color="#C3CBD8"/>
+    <SolidColorBrush x:Key="MasterBorderBrush" Color="#330E1118"/>
+    <SolidColorBrush x:Key="MasterActiveBorderBrush" Color="#590A8460"/>
+    <SolidColorBrush x:Key="BtnABrush" Color="#4BA82B"/>
+    <SolidColorBrush x:Key="BtnBBrush" Color="#D93A40"/>
+    <SolidColorBrush x:Key="BtnXBrush" Color="#2F7AEB"/>
+    <SolidColorBrush x:Key="BtnYBrush" Color="#E0B000"/>
+    <LinearGradientBrush x:Key="MasterBrush" StartPoint="0,0" EndPoint="1,0.2">
+        <GradientStop Color="#290A8460" Offset="0"/>
+        <GradientStop Color="#0A0A8460" Offset="0.6"/>
+        <GradientStop Color="#FFFFFF" Offset="1"/>
+    </LinearGradientBrush>
+
+</ResourceDictionary>

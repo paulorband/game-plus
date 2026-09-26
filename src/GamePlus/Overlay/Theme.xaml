@@ -2,31 +2,8 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!-- Game Plus: design tokens (overlay-design.html) -->
-    <Color x:Key="PanelColor">#F00E1118</Color>
-    <Color x:Key="Surface1Color">#141922</Color>
-    <Color x:Key="Surface2Color">#1A202B</Color>
-    <Color x:Key="Surface3Color">#252E3D</Color>
-    <Color x:Key="AccentColor">#35D8A0</Color>
-    <Color x:Key="FocusColor">#F2F6FF</Color>
-
-    <SolidColorBrush x:Key="PanelBrush" Color="{StaticResource PanelColor}"/>
-    <SolidColorBrush x:Key="Surface1Brush" Color="{StaticResource Surface1Color}"/>
-    <SolidColorBrush x:Key="Surface2Brush" Color="{StaticResource Surface2Color}"/>
-    <SolidColorBrush x:Key="Surface3Brush" Color="{StaticResource Surface3Color}"/>
-    <SolidColorBrush x:Key="PageBrush" Color="#0A0D12"/>
-    <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}"/>
-    <SolidColorBrush x:Key="AccentDarkBrush" Color="#04231A"/>
-    <SolidColorBrush x:Key="FocusBrush" Color="{StaticResource FocusColor}"/>
-    <SolidColorBrush x:Key="LineBrush" Color="#14FFFFFF"/>
-    <SolidColorBrush x:Key="Line2Brush" Color="#29FFFFFF"/>
-    <SolidColorBrush x:Key="TextBrush" Color="#EEF2F8"/>
-    <SolidColorBrush x:Key="Text2Brush" Color="#A5AFC0"/>
-    <SolidColorBrush x:Key="Text3Brush" Color="#6C778A"/>
-    <SolidColorBrush x:Key="KeyBrush" Color="#39445A"/>
-    <SolidColorBrush x:Key="BtnABrush" Color="#5BC236"/>
-    <SolidColorBrush x:Key="BtnBBrush" Color="#E5484D"/>
-    <SolidColorBrush x:Key="BtnXBrush" Color="#3D8BFF"/>
-    <SolidColorBrush x:Key="BtnYBrush" Color="#F5C400"/>
+    <!-- Colors live in Themes\Colors.Dark.xaml / Colors.Light.xaml (swapped at runtime by ThemeManager); fixed art colors below. -->
+    <SolidColorBrush x:Key="IconDarkBrush" Color="#04231A"/>
 
     <FontFamily x:Key="UiFont">Segoe UI Variable Text, Segoe UI</FontFamily>
     <FontFamily x:Key="MonoFont">Consolas</FontFamily>
@@ -34,7 +11,7 @@
     <Style x:Key="SectionText" TargetType="TextBlock">
         <Setter Property="FontSize" Value="11.5"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
-        <Setter Property="Foreground" Value="{StaticResource Text3Brush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Text3Brush}"/>
         <Setter Property="Margin" Value="16,12,0,4"/>
     </Style>
 
@@ -58,17 +35,17 @@
     <Style x:Key="ArrowButton" TargetType="Button" BasedOn="{StaticResource PlainButton}">
         <Setter Property="Width" Value="36"/>
         <Setter Property="Height" Value="36"/>
-        <Setter Property="Foreground" Value="{StaticResource Text3Brush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Text3Brush}"/>
         <Style.Triggers>
             <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
-                <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
             </DataTrigger>
             <Trigger Property="IsPressed" Value="True">
-                <Setter Property="Background" Value="{StaticResource FocusBrush}"/>
-                <Setter Property="Foreground" Value="#0B0E14"/>
+                <Setter Property="Background" Value="{DynamicResource FocusBrush}"/>
+                <Setter Property="Foreground" Value="{DynamicResource OnFocusBrush}"/>
             </Trigger>
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="#1FFFFFFF"/>
+                <Setter Property="Background" Value="{DynamicResource HoverBrush}"/>
             </Trigger>
         </Style.Triggers>
     </Style>
@@ -77,14 +54,14 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border x:Name="Track" Width="52" Height="30" CornerRadius="15" Background="#3A4354">
-                        <Ellipse x:Name="Knob" Width="22" Height="22" Fill="#C7CEDA"
+                    <Border x:Name="Track" Width="52" Height="30" CornerRadius="15" Background="{DynamicResource SwitchOffBrush}">
+                        <Ellipse x:Name="Knob" Width="22" Height="22" Fill="{DynamicResource KnobBrush}"
                                  HorizontalAlignment="Left" Margin="4,0,0,0"/>
                     </Border>
                     <ControlTemplate.Triggers>
                         <DataTrigger Binding="{Binding IsOn}" Value="True">
-                            <Setter TargetName="Track" Property="Background" Value="{StaticResource AccentBrush}"/>
-                            <Setter TargetName="Knob" Property="Fill" Value="{StaticResource AccentDarkBrush}"/>
+                            <Setter TargetName="Track" Property="Background" Value="{DynamicResource AccentBrush}"/>
+                            <Setter TargetName="Knob" Property="Fill" Value="{DynamicResource KnobOnBrush}"/>
                             <Setter TargetName="Knob" Property="HorizontalAlignment" Value="Right"/>
                             <Setter TargetName="Knob" Property="Margin" Value="0,0,4,0"/>
                         </DataTrigger>
@@ -99,14 +76,14 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border x:Name="Track" Width="68" Height="38" CornerRadius="19" Background="#3A4354">
-                        <Ellipse x:Name="Knob" Width="30" Height="30" Fill="#C7CEDA"
+                    <Border x:Name="Track" Width="68" Height="38" CornerRadius="19" Background="{DynamicResource SwitchOffBrush}">
+                        <Ellipse x:Name="Knob" Width="30" Height="30" Fill="{DynamicResource KnobBrush}"
                                  HorizontalAlignment="Left" Margin="4,0,0,0"/>
                     </Border>
                     <ControlTemplate.Triggers>
                         <DataTrigger Binding="{Binding IsOn}" Value="True">
-                            <Setter TargetName="Track" Property="Background" Value="{StaticResource AccentBrush}"/>
-                            <Setter TargetName="Knob" Property="Fill" Value="{StaticResource AccentDarkBrush}"/>
+                            <Setter TargetName="Track" Property="Background" Value="{DynamicResource AccentBrush}"/>
+                            <Setter TargetName="Knob" Property="Fill" Value="{DynamicResource KnobOnBrush}"/>
                             <Setter TargetName="Knob" Property="HorizontalAlignment" Value="Right"/>
                             <Setter TargetName="Knob" Property="Margin" Value="0,0,4,0"/>
                         </DataTrigger>
@@ -117,14 +94,14 @@
     </Style>
 
     <Style x:Key="SegmentButton" TargetType="Button" BasedOn="{StaticResource PlainButton}">
-        <Setter Property="Foreground" Value="{StaticResource Text2Brush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Text2Brush}"/>
         <Setter Property="FontSize" Value="14.5"/>
         <Setter Property="FontWeight" Value="Medium"/>
         <Setter Property="Padding" Value="0,6"/>
         <Style.Triggers>
             <DataTrigger Binding="{Binding IsActive}" Value="True">
-                <Setter Property="Background" Value="{StaticResource Surface3Brush}"/>
-                <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+                <Setter Property="Background" Value="{DynamicResource Surface3Brush}"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
                 <Setter Property="FontWeight" Value="Bold"/>
             </DataTrigger>
             <MultiDataTrigger>
@@ -132,8 +109,8 @@
                     <Condition Binding="{Binding IsActive}" Value="True"/>
                     <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True"/>
                 </MultiDataTrigger.Conditions>
-                <Setter Property="Background" Value="{StaticResource AccentBrush}"/>
-                <Setter Property="Foreground" Value="{StaticResource AccentDarkBrush}"/>
+                <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+                <Setter Property="Foreground" Value="{DynamicResource OnAccentBrush}"/>
             </MultiDataTrigger>
         </Style.Triggers>
     </Style>
@@ -143,17 +120,17 @@
         <Setter Property="Width" Value="26"/>
         <Setter Property="Height" Value="20"/>
         <Setter Property="Margin" Value="2"/>
-        <Setter Property="Background" Value="#252E3D"/>
+        <Setter Property="Background" Value="{DynamicResource PositionCellBrush}"/>
         <Style.Triggers>
             <DataTrigger Binding="{Binding IsActive}" Value="True">
-                <Setter Property="Background" Value="{StaticResource Text2Brush}"/>
+                <Setter Property="Background" Value="{DynamicResource Text2Brush}"/>
             </DataTrigger>
             <MultiDataTrigger>
                 <MultiDataTrigger.Conditions>
                     <Condition Binding="{Binding IsActive}" Value="True"/>
                     <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True"/>
                 </MultiDataTrigger.Conditions>
-                <Setter Property="Background" Value="{StaticResource AccentBrush}"/>
+                <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
             </MultiDataTrigger>
         </Style.Triggers>
     </Style>
@@ -165,13 +142,13 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ScrollBar">
-                    <Grid Width="4" Background="#0DFFFFFF">
+                    <Grid Width="4" Background="{DynamicResource ScrollTrackBrush}">
                         <Track x:Name="PART_Track" IsDirectionReversed="True">
                             <Track.Thumb>
                                 <Thumb>
                                     <Thumb.Template>
                                         <ControlTemplate TargetType="Thumb">
-                                            <Border Background="#47FFFFFF" CornerRadius="2"/>
+                                            <Border Background="{DynamicResource ScrollThumbBrush}" CornerRadius="2"/>
                                         </ControlTemplate>
                                     </Thumb.Template>
                                 </Thumb>

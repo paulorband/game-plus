@@ -59,6 +59,7 @@ public partial class OverlayWindow : Window
         _gamepad = gamepad;
         _monitoring = monitoring;
         _appSettings = appSettings;
+        _appSettings.Changed += OnAppSettingsChanged;
 
         Loaded += (_, _) =>
         {
@@ -74,6 +75,7 @@ public partial class OverlayWindow : Window
         Closing += (_, _) => _closing = true;
         Closed += (_, _) =>
         {
+            _appSettings.Changed -= OnAppSettingsChanged;
             _gamepad.ButtonPressed -= OnGamepadButtonPressed;
             _gamepad.ButtonRepeated -= OnGamepadButtonRepeated;
             _gamepad.ButtonReleased -= OnGamepadButtonReleased;
@@ -294,6 +296,8 @@ public partial class OverlayWindow : Window
         var s = _appSettings.Current;
         return
         [
+            new EnumSettingRow("Tema", [ThemeManager.Dark, ThemeManager.Light], () => ThemeManager.Normalize(s.Theme),
+                v => { s.Theme = v; _appSettings.Save(); }, ["Escuro", "Claro"]) { Section = "Aparência" },
             new BoolSettingRow("Iniciar com o Windows", StartupRegistration.IsEnabled, StartupRegistration.SetEnabled) { Section = "Inicialização" },
             new EnumSettingRow("Ao iniciar", ["window", "tray"], () => s.StartInTray ? "tray" : "window",
                 v => { s.StartInTray = v == "tray"; _appSettings.Save(); }, ["Abrir a janela", "Só na bandeja"]),
@@ -364,6 +368,9 @@ public partial class OverlayWindow : Window
     private void OnRailLsClick(object sender, System.Windows.Input.MouseButtonEventArgs e) => SetCategory(Category.LosslessScaling);
 
     private void OnRailMonClick(object sender, System.Windows.Input.MouseButtonEventArgs e) => SetCategory(Category.Monitoring);
+
+    // Runs after App has applied the new theme; the rail items are styled from code, so they need a nudge.
+    private void OnAppSettingsChanged() => UpdateChrome();
 
     private void OnRailSetClick(object sender, System.Windows.Input.MouseButtonEventArgs e) => SetCategory(Category.Settings);
 

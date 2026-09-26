@@ -56,6 +56,8 @@ public partial class App : Application
         _configService = new AppConfigService();
         _config = _configService.Load();
         _appSettings = new AppSettingsService();
+        ApplyAppearance();
+        _appSettings.Changed += ApplyAppearance;
         _settingsService = new LosslessScalingSettingsService();
         _processService = new LosslessScalingProcessService();
 
@@ -94,6 +96,9 @@ public partial class App : Application
             ShowOverlay();
         }
     }
+
+    // Theme is an app-wide resource, so it is applied here rather than by any one window.
+    private void ApplyAppearance() => ThemeManager.Apply(_appSettings.Current.Theme);
 
     private void SetupTrayIcon()
     {
