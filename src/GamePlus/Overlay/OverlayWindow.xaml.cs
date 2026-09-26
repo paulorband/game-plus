@@ -15,7 +15,7 @@ public partial class OverlayWindow : Window
     private readonly GamepadService _gamepad;
     private readonly MonitoringService _monitoring;
 
-    private enum Category { LosslessScaling, Monitoring }
+    private enum Category { LosslessScaling, Monitoring, Settings }
     private Category _category;
     private string _gpuKey = "";
     private bool _openingMonitoring;
@@ -105,7 +105,12 @@ public partial class OverlayWindow : Window
 
     private void RebuildRows()
     {
-        _rows = _category == Category.Monitoring ? BuildMonitoringRows() : BuildLosslessRows();
+        _rows = _category switch
+        {
+            Category.Monitoring => BuildMonitoringRows(),
+            Category.Settings => BuildSettingsRows(),
+            _ => BuildLosslessRows(),
+        };
         RowsList.ItemsSource = _rows;
         RowsList.SelectedIndex = 0;
         StatusText.Text = " ";
@@ -281,6 +286,11 @@ public partial class OverlayWindow : Window
         return _rows = rows;
     }
 
+    private List<SettingRow> BuildSettingsRows() =>
+    [
+        new BoolSettingRow("Iniciar com o Windows", StartupRegistration.IsEnabled, StartupRegistration.SetEnabled) { Section = "Inicialização" },
+    ];
+
     // "NVIDIA GeForce RTX 5060 Ti" -> "RTX 5060 Ti": the stepper only has room for a short name.
     private static string ShortGpuName(string name) =>
         System.Text.RegularExpressions.Regex.Replace(name, @"NVIDIA |GeForce |AMD |\(TM\)|\(R\)", "").Trim();
@@ -329,8 +339,8 @@ public partial class OverlayWindow : Window
 
     private void ChangeCategory(int delta)
     {
-        var next = (Category)(((int)_category + delta + 2) % 2);
-        SetCategory(next);
+        var count = Enum.GetValues<Category>().Length;
+        SetCategory((Category)(((int)_category + delta + count) % count));
     }
 
     private void SetCategory(Category category)
@@ -344,12 +354,15 @@ public partial class OverlayWindow : Window
 
     private void OnRailMonClick(object sender, System.Windows.Input.MouseButtonEventArgs e) => SetCategory(Category.Monitoring);
 
+    private void OnRailSetClick(object sender, System.Windows.Input.MouseButtonEventArgs e) => SetCategory(Category.Settings);
+
     // Everything outside the row list that depends on the active category.
     private void UpdateChrome()
     {
         var ls = _category == Category.LosslessScaling;
         StyleRailItem(RailLs, ls);
-        StyleRailItem(RailMon, !ls);
+        StyleRailItem(RailMon, _category == Category.Monitoring);
+        StyleRailItem(RailSet, _category == Category.Settings);
         RailDot.Visibility = _scaling ? Visibility.Visible : Visibility.Hidden;
         MonDot.Visibility = _monitoring.Config.Enabled ? Visibility.Visible : Visibility.Hidden;
 

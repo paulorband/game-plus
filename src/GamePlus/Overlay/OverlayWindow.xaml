@@ -383,6 +383,14 @@
                                     <TextBlock Text="Monitoramento" FontSize="15" FontWeight="Medium" Foreground="{StaticResource Text2Brush}" VerticalAlignment="Center"/>
                                 </DockPanel>
                             </Border>
+                            <Border x:Name="RailSet" Height="48" CornerRadius="10" Background="Transparent" Padding="12,0" Margin="0,4,0,0" Cursor="Hand"
+                                    MouseLeftButtonDown="OnRailSetClick">
+                                <DockPanel VerticalAlignment="Center">
+                                    <Path DockPanel.Dock="Left" Data="M3,5 H17 M3,10 H17 M3,15 H17 M7,3 V7 M13,8 V12 M6,13 V17" Stroke="{StaticResource Text2Brush}" StrokeThickness="1.7"
+                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="20" Height="20" Stretch="Uniform" Margin="0,0,12,0"/>
+                                    <TextBlock Text="Configurações" FontSize="15" FontWeight="Medium" Foreground="{StaticResource Text2Brush}" VerticalAlignment="Center"/>
+                                </DockPanel>
+                            </Border>
                         </StackPanel>
                     </DockPanel>
                 </Border>

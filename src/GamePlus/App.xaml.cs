@@ -101,6 +101,8 @@ public partial class App : Application
         var startupItem = new ToolStripMenuItem("Iniciar com o Windows") { CheckOnClick = true, Checked = StartupRegistration.IsEnabled() };
         startupItem.Click += (_, _) => StartupRegistration.SetEnabled(startupItem.Checked);
         menu.Items.Add(startupItem);
+        // The overlay's Settings category can flip this too, so re-read it whenever the menu opens.
+        menu.Opening += (_, _) => startupItem.Checked = StartupRegistration.IsEnabled();
 
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add("Sair", null, (_, _) => Shutdown());
