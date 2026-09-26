@@ -15,6 +15,9 @@ public sealed class AppSettings
     /// <summary>Size of the overlay in percent of its design size (75-150).</summary>
     public int UiScale { get; set; } = 100;
 
+    /// <summary>Sidebar features the user hid (Category names). Hiding also turns the feature off.</summary>
+    public List<string> HiddenFeatures { get; set; } = [];
+
     /// <summary>Launch straight to the tray instead of opening the window.</summary>
     public bool StartInTray { get; set; }
 

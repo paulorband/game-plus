@@ -61,6 +61,8 @@ public partial class OverlayWindow : Window
         _appSettings = appSettings;
         _appSettings.Changed += OnAppSettingsChanged;
         ApplyScale();
+        BuildFeatures();
+        _category = _features.First(f => IsVisible(f.Id)).Id;
 
         Loaded += (_, _) =>
         {
@@ -308,12 +310,34 @@ public partial class OverlayWindow : Window
             new EnumSettingRow(Loc.T("set.language"), languages.Select(l => l.Code).ToArray(), () => Loc.Instance.Code,
                 v => { s.Language = v; _appSettings.Save(); }, languages.Select(l => l.Name).ToArray(), forceStepper: true),
 
+            .. FeatureVisibilityRows(),
+
             new BoolSettingRow(Loc.T("set.start_with_windows"), StartupRegistration.IsEnabled, StartupRegistration.SetEnabled) { Section = Loc.T("set.section.startup") },
             new EnumSettingRow(Loc.T("set.start_mode"), ["window", "tray"], () => s.StartInTray ? "tray" : "window",
                 v => { s.StartInTray = v == "tray"; _appSettings.Save(); }, [Loc.T("set.start_mode.window"), Loc.T("set.start_mode.tray")]),
             new BoolSettingRow(Loc.T("set.tray_click"), () => s.TrayClickOpens, on => { s.TrayClickOpens = on; _appSettings.Save(); })
                 { Hint = Loc.T("set.tray_click.hint") },
         ];
+    }
+
+    // One toggle per hideable feature, generated from the registry (so new features show up here on their own).
+    private IEnumerable<SettingRow> FeatureVisibilityRows()
+    {
+        var hideable = _features.Where(f => f.Hideable).ToList();
+        var first = true;
+        foreach (var feature in hideable)
+        {
+            var f = feature;
+            var lastOne = () => IsVisible(f.Id) && hideable.Count(h => IsVisible(h.Id)) <= 1;
+            yield return new BoolSettingRow(Loc.T(f.NameKey), () => IsVisible(f.Id), on => SetFeatureVisible(f, on))
+            {
+                Section = first ? Loc.T("set.section.sidebar") : null,
+                Hint = first ? Loc.T("set.sidebar.hint") : null,
+                EnabledWhen = () => !lastOne(),
+                HintWhen = () => lastOne() ? Loc.T("set.sidebar.last") : null,
+            };
+            first = false;
+        }
     }
 
     // "NVIDIA GeForce RTX 5060 Ti" -> "RTX 5060 Ti": the stepper only has room for a short name.
@@ -364,20 +388,18 @@ public partial class OverlayWindow : Window
 
     private void ChangeCategory(int delta)
     {
-        var count = Enum.GetValues<Category>().Length;
-        SetCategory((Category)(((int)_category + delta + count) % count));
+        // Hidden features are skipped, so LB/RB only walks what the rail shows.
+        var shown = _features.Where(f => IsVisible(f.Id)).Select(f => f.Id).ToList();
+        var at = Math.Max(shown.IndexOf(_category), 0);
+        SetCategory(shown[((at + delta) % shown.Count + shown.Count) % shown.Count]);
     }
 
     private void SetCategory(Category category)
     {
-        if (category == _category) return;
+        if (category == _category || !IsVisible(category)) return;
         _category = category;
         RebuildRows();
     }
-
-    private void OnRailLsClick(object sender, System.Windows.Input.MouseButtonEventArgs e) => SetCategory(Category.LosslessScaling);
-
-    private void OnRailMonClick(object sender, System.Windows.Input.MouseButtonEventArgs e) => SetCategory(Category.Monitoring);
 
     // Runs after App has applied the new theme; the rail items are styled from code, so they need a nudge.
     private void OnAppSettingsChanged()
@@ -415,23 +437,136 @@ public partial class OverlayWindow : Window
         Top = area.Top + (area.Height - BaseHeight * scale) / 2;
     }
 
-    private void OnRailSetClick(object sender, System.Windows.Input.MouseButtonEventArgs e) => SetCategory(Category.Settings);
-
     // Everything outside the row list that depends on the active category.
     private void UpdateChrome()
     {
         var ls = _category == Category.LosslessScaling;
-        StyleRailItem(RailLs, ls);
-        StyleRailItem(RailMon, _category == Category.Monitoring);
-        StyleRailItem(RailSet, _category == Category.Settings);
-        RailDot.Visibility = _scaling ? Visibility.Visible : Visibility.Hidden;
-        MonDot.Visibility = _monitoring.Config.Enabled ? Visibility.Visible : Visibility.Hidden;
+        foreach (var feature in _features)
+        {
+            var (item, _) = _rail[feature.Id];
+            item.Visibility = IsVisible(feature.Id) ? Visibility.Visible : Visibility.Collapsed;
+            StyleRailItem(item, feature.Id == _category);
+        }
+        UpdateDots();
 
         var lsOnly = ls ? Visibility.Visible : Visibility.Collapsed;
         ProfileChip.Visibility = lsOnly;
         ProfileHint.Visibility = lsOnly;
         RestartHint.Visibility = lsOnly;
         SaveHint.Visibility = lsOnly;
+    }
+
+    // ---- Feature registry -------------------------------------------------------------------------------------------
+    // Everything the sidebar and the "Sidebar items" settings are generated from. A new feature = a Category value,
+    // one entry here and a row builder in RebuildRows; the rail, the show/hide setting and the "keep one visible" rule follow.
+
+    /// <param name="Active">Whether the feature is doing something right now (the dot next to its name).</param>
+    /// <param name="Deactivate">Turns the feature off; runs when it is hidden and again when it is shown, so it always starts off.</param>
+    private sealed record Feature(Category Id, string NameKey, string Icon, Func<bool>? Active, Action? Deactivate, bool Hideable = true);
+
+    private List<Feature> _features = null!;
+    private readonly Dictionary<Category, (System.Windows.Controls.Border Item, System.Windows.Shapes.Ellipse? Dot)> _rail = new();
+
+    private void BuildFeatures()
+    {
+        _features =
+        [
+            new(Category.LosslessScaling, "cat.lossless", "M11,2 L4,11 L9,11 L8,18 L16,8 L11,8 Z", () => _scaling, DeactivateScaling),
+            new(Category.Monitoring, "cat.monitoring", "M3,14 A7,7 0 1 1 17,14 M10,14 L13,9", () => _monitoring.Config.Enabled, DeactivateMonitoring),
+            new(Category.Settings, "cat.settings", "M3,5 H17 M3,10 H17 M3,15 H17 M7,3 V7 M13,8 V12 M6,13 V17", null, null, Hideable: false),
+        ];
+
+        // Never leave the rail with nothing to show (a hand-edited settings.json could hide everything).
+        var hidden = _appSettings.Current.HiddenFeatures;
+        if (_features.Where(f => f.Hideable).All(f => hidden.Contains(f.Id.ToString()))) hidden.Clear();
+
+        foreach (var feature in _features)
+        {
+            var dock = new System.Windows.Controls.DockPanel { VerticalAlignment = System.Windows.VerticalAlignment.Center };
+            var icon = new System.Windows.Shapes.Path
+            {
+                Data = System.Windows.Media.Geometry.Parse(feature.Icon), StrokeThickness = 1.7, Width = 20, Height = 20,
+                Stretch = System.Windows.Media.Stretch.Uniform, Margin = new Thickness(0, 0, 12, 0),
+                StrokeLineJoin = System.Windows.Media.PenLineJoin.Round,
+                StrokeStartLineCap = System.Windows.Media.PenLineCap.Round, StrokeEndLineCap = System.Windows.Media.PenLineCap.Round,
+            };
+            System.Windows.Controls.DockPanel.SetDock(icon, System.Windows.Controls.Dock.Left);
+            dock.Children.Add(icon);
+
+            System.Windows.Shapes.Ellipse? dot = null;
+            if (feature.Active is not null)
+            {
+                dot = new System.Windows.Shapes.Ellipse { Width = 8, Height = 8, HorizontalAlignment = System.Windows.HorizontalAlignment.Right, Visibility = Visibility.Hidden };
+                dot.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, "AccentBrush");
+                System.Windows.Controls.DockPanel.SetDock(dot, System.Windows.Controls.Dock.Right);
+                dock.Children.Add(dot);
+            }
+
+            var label = new System.Windows.Controls.TextBlock { FontSize = 15, FontWeight = FontWeights.Medium, VerticalAlignment = System.Windows.VerticalAlignment.Center };
+            label.SetBinding(System.Windows.Controls.TextBlock.TextProperty,
+                new System.Windows.Data.Binding($"[{feature.NameKey}]") { Source = Loc.Instance });
+            dock.Children.Add(label);
+
+            var item = new System.Windows.Controls.Border
+            {
+                Height = 48, CornerRadius = new CornerRadius(10), Padding = new Thickness(12, 0, 12, 0), Margin = new Thickness(0, 0, 0, 4),
+                Cursor = System.Windows.Input.Cursors.Hand, Background = System.Windows.Media.Brushes.Transparent, Child = dock,
+            };
+            var id = feature.Id;
+            item.MouseLeftButtonDown += (_, _) => SetCategory(id);
+            RailItems.Children.Add(item);
+            _rail[feature.Id] = (item, dot);
+        }
+    }
+
+    private bool IsVisible(Category id) =>
+        _features.FirstOrDefault(f => f.Id == id) is { } f && (!f.Hideable || !_appSettings.Current.HiddenFeatures.Contains(id.ToString()));
+
+    private void UpdateDots()
+    {
+        foreach (var feature in _features)
+            if (_rail[feature.Id].Dot is { } dot && feature.Active is not null)
+                dot.Visibility = feature.Active() ? Visibility.Visible : Visibility.Hidden;
+    }
+
+    private void SetFeatureVisible(Feature feature, bool visible)
+    {
+        var hidden = _appSettings.Current.HiddenFeatures;
+        var id = feature.Id.ToString();
+        if (!visible && _features.Count(f => f.Hideable && IsVisible(f.Id)) <= 1) return;   // at least one stays
+        if (visible) hidden.Remove(id); else if (!hidden.Contains(id)) hidden.Add(id);
+        feature.Deactivate?.Invoke();   // hiding switches it off; showing it again must not resurrect an old "on"
+        _appSettings.Save();
+    }
+
+    private void DeactivateMonitoring()
+    {
+        if (!_monitoring.Config.Enabled) return;
+        _monitoring.Config.Enabled = false;
+        _monitoring.Save();
+    }
+
+    private void DeactivateScaling()
+    {
+        if (_countdown > 0) _cancelCountdown = true;
+        if (!_scaling) return;
+        var (hotkey, modifiers) = ReadHotkey();
+        // The hotkey is global, so it works while the overlay has focus (same as turning it off from the master card).
+        Task.Run(() => HotkeyInputSender.SendHotkey(hotkey, modifiers));
+        _scaling = false;
+    }
+
+    private (System.Windows.Forms.Keys Hotkey, System.Windows.Forms.Keys[] Modifiers) ReadHotkey()
+    {
+        try
+        {
+            return LosslessScalingSettingsService.ParseHotkey(_settingsService.Load());
+        }
+        catch (Exception)
+        {
+            // Settings unreadable: fall back to LS's default F12.
+            return (System.Windows.Forms.Keys.F12, Array.Empty<System.Windows.Forms.Keys>());
+        }
     }
 
     private void StyleRailItem(System.Windows.Controls.Border item, bool active)
@@ -449,7 +584,7 @@ public partial class OverlayWindow : Window
     private void RefreshAll()
     {
         foreach (var row in _rows) row.Refresh();
-        MonDot.Visibility = _monitoring.Config.Enabled ? Visibility.Visible : Visibility.Hidden;
+        UpdateDots();
     }
 
     // Moves focus to the next enabled row in the given direction, wrapping past either end (stays put if none).
@@ -706,16 +841,7 @@ public partial class OverlayWindow : Window
         }
 
         var target = PreviousForegroundWindow;
-        var hotkey = System.Windows.Forms.Keys.F12;
-        var modifiers = Array.Empty<System.Windows.Forms.Keys>();
-        try
-        {
-            (hotkey, modifiers) = LosslessScalingSettingsService.ParseHotkey(_settingsService.Load());
-        }
-        catch (Exception)
-        {
-            // Settings unreadable: fall back to LS's default F12.
-        }
+        var (hotkey, modifiers) = ReadHotkey();
 
         if (_scaling)
         {
@@ -724,7 +850,7 @@ public partial class OverlayWindow : Window
             // LS hides its windows while the overlay has focus, so the poll can't confirm this; assume it worked.
             _scaling = false;
             _rows.FirstOrDefault()?.Refresh();
-            RailDot.Visibility = Visibility.Hidden;
+            UpdateDots();
             return;
         }
 
@@ -841,7 +967,7 @@ public partial class OverlayWindow : Window
                 _running = running;
                 _installed = installed;
                 _rows.FirstOrDefault()?.Refresh();
-                RailDot.Visibility = _scaling ? Visibility.Visible : Visibility.Hidden;
+                UpdateDots();
             }
             if (_category == Category.Monitoring) RefreshMonitoringRows();
             tick++;

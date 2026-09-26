@@ -79,6 +79,7 @@ A categoria **Configurações** (terceiro item da barra lateral) guarda as prefe
 - **Tema:** escuro (padrão) ou claro.
 - **Opacidade do painel:** 50 a 100% (só o fundo do painel; os textos continuam nítidos).
 - **Escala da interface:** 75 a 150%. Se não couber na tela (ex.: handheld 720p), é reduzida automaticamente.
+- **Itens do menu lateral:** mostrar/ocultar Lossless Scaling e Monitoramento (Configurações sempre aparece; pelo menos um item precisa ficar visível). Ocultar também desliga a função (ex.: a geração de quadros), e um item exibido de novo volta desligado. Funcionalidades novas entram nessa lista automaticamente.
 - **Idioma:** Português (Brasil) e English; por padrão segue o idioma do Windows.
 - **Iniciar com o Windows** e **Ao iniciar** (abrir a janela, que é o padrão, ou só na bandeja).
 - **Abrir com um clique na bandeja** (desligado: só o clique duplo abre).
