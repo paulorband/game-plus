@@ -88,7 +88,8 @@ public partial class App : Application
             _trayIcon.ShowBalloonTip(2000, "Lossless Scaling", "Configurações da cópia local aplicadas.", ToolTipIcon.None);
         }
 
-        if (e.Args.Contains("--overlay"))
+        // The window is the default; "start in tray" is opt-in. --overlay always opens it.
+        if (e.Args.Contains("--overlay") || !_appSettings.Current.StartInTray)
         {
             ShowOverlay();
         }

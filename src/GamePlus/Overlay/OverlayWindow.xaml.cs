@@ -295,6 +295,8 @@ public partial class OverlayWindow : Window
         return
         [
             new BoolSettingRow("Iniciar com o Windows", StartupRegistration.IsEnabled, StartupRegistration.SetEnabled) { Section = "Inicialização" },
+            new EnumSettingRow("Ao iniciar", ["window", "tray"], () => s.StartInTray ? "tray" : "window",
+                v => { s.StartInTray = v == "tray"; _appSettings.Save(); }, ["Abrir a janela", "Só na bandeja"]),
             new BoolSettingRow("Abrir com um clique na bandeja", () => s.TrayClickOpens, on => { s.TrayClickOpens = on; _appSettings.Save(); })
                 { Hint = "Desligado: só o clique duplo abre" },
         ];

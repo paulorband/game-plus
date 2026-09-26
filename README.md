@@ -116,8 +116,7 @@ Criado automaticamente na primeira execução, com os padrões:
   "ToggleCombo": ["Back", "LeftThumb"],
   "OverlayCombo": ["Back", "Start"],
   "LosslessScalingExePath": null,
-  "AutoRestartOnSave": true,
-  "StartMinimizedToTray": true
+  "AutoRestartOnSave": true
 }
 ```
 

@@ -26,6 +26,4 @@ public sealed class AppConfig
 
     /// <summary>Automatically relaunch Lossless Scaling after saving settings so changes take effect.</summary>
     public bool AutoRestartOnSave { get; set; } = true;
-
-    public bool StartMinimizedToTray { get; set; } = true;
 }
