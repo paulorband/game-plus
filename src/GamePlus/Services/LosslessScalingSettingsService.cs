@@ -20,7 +20,7 @@ public sealed class LosslessScalingSettingsService
     {
         using var stream = File.OpenRead(SettingsPath);
         var settings = (LosslessScalingSettings?)Serializer.Deserialize(stream)
-            ?? throw new InvalidDataException("Settings.xml do Lossless Scaling está vazio ou inválido.");
+            ?? throw new InvalidDataException(Loc.T("ls.settings_invalid"));
         return settings;
     }
 

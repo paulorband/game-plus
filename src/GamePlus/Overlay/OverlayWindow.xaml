@@ -1,6 +1,7 @@
 <Window x:Class="GamePlus.Overlay.OverlayWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:svc="clr-namespace:GamePlus.Services"
         Title="Game Plus"
         WindowStyle="None"
         AllowsTransparency="True"
@@ -178,7 +179,7 @@
                                         Visibility="{Binding ShowSwitch, Converter={StaticResource BoolToVis}}"/>
                                 <Border CornerRadius="10" Background="{DynamicResource BtnYBrush}" Padding="16,8"
                                         Visibility="{Binding ShowInstall, Converter={StaticResource BoolToVis}}">
-                                    <TextBlock Text="Baixar na Steam" FontSize="15" FontWeight="Bold" Foreground="#0B0E14"/>
+                                    <TextBlock Text="{Binding [master.install], Source={x:Static svc:Loc.Instance}}" FontSize="15" FontWeight="Bold" Foreground="#0B0E14"/>
                                 </Border>
                             </StackPanel>
                         </Button>
@@ -340,7 +341,7 @@
                             </StackPanel>
                         </Border>
                         <Button Content="✕" Style="{StaticResource PlainButton}" Width="36" Height="36" Margin="12,0,0,0"
-                                FontSize="16" Foreground="{DynamicResource Text2Brush}" Click="OnCloseClick" ToolTip="Fechar"/>
+                                FontSize="16" Foreground="{DynamicResource Text2Brush}" Click="OnCloseClick" ToolTip="{Binding [hint.close], Source={x:Static svc:Loc.Instance}}"/>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -357,14 +358,14 @@
                         <TextBlock x:Name="StatusText" DockPanel.Dock="Bottom" TextWrapping="Wrap" FontSize="13"
                                    Foreground="{DynamicResource AccentBrush}" Margin="12,8,4,0" MinHeight="18"/>
                         <StackPanel>
-                            <TextBlock Text="CATEGORIAS" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource Text3Brush}" Margin="12,0,0,8"/>
+                            <TextBlock Text="{Binding [rail.categories], Source={x:Static svc:Loc.Instance}}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource Text3Brush}" Margin="12,0,0,8"/>
                             <Border x:Name="RailLs" Height="48" CornerRadius="10" Background="{DynamicResource Surface3Brush}" Padding="12,0" Cursor="Hand"
                                     MouseLeftButtonDown="OnRailLsClick">
                                 <DockPanel VerticalAlignment="Center">
                                     <Path DockPanel.Dock="Left" Data="M11,2 L4,11 L9,11 L8,18 L16,8 L11,8 Z" Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.7"
                                           StrokeLineJoin="Round" Width="20" Height="20" Stretch="Uniform" Margin="0,0,12,0"/>
                                     <Ellipse x:Name="RailDot" DockPanel.Dock="Right" Width="8" Height="8" Fill="{DynamicResource AccentBrush}" HorizontalAlignment="Right"/>
-                                    <TextBlock Text="Lossless Scaling" FontSize="15" FontWeight="Medium" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding [cat.lossless], Source={x:Static svc:Loc.Instance}}" FontSize="15" FontWeight="Medium" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
                                 </DockPanel>
                             </Border>
                             <Border x:Name="RailMon" Height="48" CornerRadius="10" Background="Transparent" Padding="12,0" Margin="0,4,0,0" Cursor="Hand"
@@ -373,7 +374,7 @@
                                     <Path DockPanel.Dock="Left" Data="M3,14 A7,7 0 1 1 17,14 M10,14 L13,9" Stroke="{DynamicResource Text2Brush}" StrokeThickness="1.7"
                                           StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="20" Height="20" Stretch="Uniform" Margin="0,0,12,0"/>
                                     <Ellipse x:Name="MonDot" DockPanel.Dock="Right" Width="8" Height="8" Fill="{DynamicResource AccentBrush}" HorizontalAlignment="Right" Visibility="Hidden"/>
-                                    <TextBlock Text="Monitoramento" FontSize="15" FontWeight="Medium" Foreground="{DynamicResource Text2Brush}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding [cat.monitoring], Source={x:Static svc:Loc.Instance}}" FontSize="15" FontWeight="Medium" Foreground="{DynamicResource Text2Brush}" VerticalAlignment="Center"/>
                                 </DockPanel>
                             </Border>
                             <Border x:Name="RailSet" Height="48" CornerRadius="10" Background="Transparent" Padding="12,0" Margin="0,4,0,0" Cursor="Hand"
@@ -381,7 +382,7 @@
                                 <DockPanel VerticalAlignment="Center">
                                     <Path DockPanel.Dock="Left" Data="M3,5 H17 M3,10 H17 M3,15 H17 M7,3 V7 M13,8 V12 M6,13 V17" Stroke="{DynamicResource Text2Brush}" StrokeThickness="1.7"
                                           StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="20" Height="20" Stretch="Uniform" Margin="0,0,12,0"/>
-                                    <TextBlock Text="Configurações" FontSize="15" FontWeight="Medium" Foreground="{DynamicResource Text2Brush}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding [cat.settings], Source={x:Static svc:Loc.Instance}}" FontSize="15" FontWeight="Medium" Foreground="{DynamicResource Text2Brush}" VerticalAlignment="Center"/>
                                 </DockPanel>
                             </Border>
                         </StackPanel>
@@ -405,19 +406,19 @@
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left">
                         <Path Data="M8,1 L14,1 L14,8 L21,8 L21,14 L14,14 L14,21 L8,21 L8,14 L1,14 L1,8 L8,8 Z" Fill="{DynamicResource KeyBrush}"
                               Width="22" Height="22" Stretch="Uniform" Margin="0,0,8,0"/>
-                        <TextBlock Text="Navegar / ajustar" Style="{StaticResource HintText}" Margin="0,0,20,0"/>
+                        <TextBlock Text="{Binding [hint.navigate], Source={x:Static svc:Loc.Instance}}" Style="{StaticResource HintText}" Margin="0,0,20,0"/>
 
                         <Border Width="22" Height="22" CornerRadius="11" Background="{DynamicResource BtnABrush}" Margin="0,0,8,0">
                             <TextBlock Text="A" FontSize="12" FontWeight="Bold" Foreground="#0B0E14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
-                        <TextBlock x:Name="HintAText" Text="Alternar" Style="{StaticResource HintText}" Margin="0,0,20,0"/>
+                        <TextBlock x:Name="HintAText" Text="{Binding [hint.toggle], Source={x:Static svc:Loc.Instance}}" Style="{StaticResource HintText}" Margin="0,0,20,0"/>
 
                         <Button x:Name="RestartHint" Style="{StaticResource PlainButton}" Padding="0" Margin="0,0,20,0" Click="OnRestartClick">
                             <StackPanel Orientation="Horizontal">
                                 <Border Width="22" Height="22" CornerRadius="11" Background="{DynamicResource BtnXBrush}" Margin="0,0,8,0">
                                     <TextBlock Text="X" FontSize="12" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <TextBlock Text="Reiniciar LS" Style="{StaticResource HintText}"/>
+                                <TextBlock Text="{Binding [hint.restart], Source={x:Static svc:Loc.Instance}}" Style="{StaticResource HintText}"/>
                             </StackPanel>
                         </Button>
 
@@ -426,7 +427,7 @@
                                 <Border Width="22" Height="22" CornerRadius="11" Background="{DynamicResource BtnYBrush}" Margin="0,0,8,0">
                                     <TextBlock Text="Y" FontSize="12" FontWeight="Bold" Foreground="#0B0E14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <TextBlock Text="Salvar perfil" Style="{StaticResource HintText}"/>
+                                <TextBlock Text="{Binding [hint.save], Source={x:Static svc:Loc.Instance}}" Style="{StaticResource HintText}"/>
                             </StackPanel>
                         </Button>
                     </StackPanel>
@@ -438,7 +439,7 @@
                         <Border Style="{StaticResource KeyPill}">
                             <TextBlock Text="RB" FontSize="11.5" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
-                        <TextBlock Text="Categoria" Style="{StaticResource HintText}" Margin="4,0,20,0"/>
+                        <TextBlock Text="{Binding [hint.category], Source={x:Static svc:Loc.Instance}}" Style="{StaticResource HintText}" Margin="4,0,20,0"/>
                         <StackPanel x:Name="ProfileHint" Orientation="Horizontal">
                             <Border Style="{StaticResource KeyPill}">
                                 <TextBlock Text="LT" FontSize="11.5" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -446,7 +447,7 @@
                             <Border Style="{StaticResource KeyPill}">
                                 <TextBlock Text="RT" FontSize="11.5" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock Text="Perfil" Style="{StaticResource HintText}" Margin="4,0,20,0"/>
+                            <TextBlock Text="{Binding [hint.profile], Source={x:Static svc:Loc.Instance}}" Style="{StaticResource HintText}" Margin="4,0,20,0"/>
                         </StackPanel>
 
                         <Button Style="{StaticResource PlainButton}" Padding="0" Click="OnCloseClick">
@@ -454,7 +455,7 @@
                                 <Border Width="22" Height="22" CornerRadius="11" Background="{DynamicResource BtnBBrush}" Margin="0,0,8,0">
                                     <TextBlock Text="B" FontSize="12" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <TextBlock Text="Fechar" Style="{StaticResource HintText}"/>
+                                <TextBlock Text="{Binding [hint.close], Source={x:Static svc:Loc.Instance}}" Style="{StaticResource HintText}"/>
                             </StackPanel>
                         </Button>
                     </StackPanel>

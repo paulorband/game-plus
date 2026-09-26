@@ -96,7 +96,7 @@ public partial class OverlayWindow : Window
         }
         catch (Exception ex)
         {
-            StatusText.Text = $"Erro ao carregar Settings.xml: {ex.Message}";
+            StatusText.Text = Loc.T("ls.load_error", ex.Message);
             _settings = new LosslessScalingSettings();
         }
 
@@ -127,7 +127,7 @@ public partial class OverlayWindow : Window
     {
         var profile = _settings.GameProfiles[_profileIndex];
         ProfileNameText.Text = profile.Title;
-        ProfileCountText.Text = $"{_profileIndex + 1} de {_settings.GameProfiles.Count}";
+        ProfileCountText.Text = Loc.T("profile.count", _profileIndex + 1, _settings.GameProfiles.Count);
 
         bool adaptive() => profile.LSFG3Mode1 == "ADAPTIVE";
 
@@ -135,48 +135,48 @@ public partial class OverlayWindow : Window
         {
             new ActionRow("Lossless Scaling", ToggleScaling, CurrentState, () =>
             {
-                if (profile.FrameGeneration == "Off") return ["Geração desligada"];
+                if (profile.FrameGeneration == "Off") return [Loc.T("ls.pill.generation_off")];
                 var pills = new List<string> { profile.FrameGeneration };
-                pills.Add(adaptive() ? $"Dinâmico {profile.LSFG3Target} fps" : $"{profile.LSFG3Multiplier}x");
+                pills.Add(adaptive() ? Loc.T("ls.pill.adaptive", profile.LSFG3Target) : $"{profile.LSFG3Multiplier}x");
                 pills.Add($"Flow {profile.LSFGFlowScale}%");
                 return pills;
             })
             { Countdown = () => _countdown },
 
-            new EnumSettingRow("Algoritmo", ["Off", "LSFG2", "LSFG3"],
-                () => profile.FrameGeneration, v => profile.FrameGeneration = v, ["Desligado", "LSFG2", "LSFG3"])
-                { Section = "Geração de quadros" },
+            new EnumSettingRow(Loc.T("ls.algorithm"), ["Off", "LSFG2", "LSFG3"],
+                () => profile.FrameGeneration, v => profile.FrameGeneration = v, [Loc.T("ls.algorithm.off"), "LSFG2", "LSFG3"])
+                { Section = Loc.T("ls.section.framegen") },
 
-            new EnumSettingRow("Modo", ["FIXED", "ADAPTIVE"],
-                () => profile.LSFG3Mode1, v => profile.LSFG3Mode1 = v, ["Fixo", "Dinâmico"]),
+            new EnumSettingRow(Loc.T("ls.mode"), ["FIXED", "ADAPTIVE"],
+                () => profile.LSFG3Mode1, v => profile.LSFG3Mode1 = v, [Loc.T("ls.mode.fixed"), Loc.T("ls.mode.adaptive")]),
 
-            new IntSettingRow("Multiplicador", () => profile.LSFG3Multiplier, v => profile.LSFG3Multiplier = v, 2, 4, 1, "x")
-                { Hint = "Quadros gerados para cada quadro real" },
+            new IntSettingRow(Loc.T("ls.multiplier"), () => profile.LSFG3Multiplier, v => profile.LSFG3Multiplier = v, 2, 4, 1, "x")
+                { Hint = Loc.T("ls.multiplier.hint") },
 
-            new IntSettingRow("FPS alvo", () => profile.LSFG3Target, v => profile.LSFG3Target = v, 20, 480, 10, " fps")
-                { Hint = "Disponível apenas no modo Dinâmico", EnabledWhen = adaptive },
+            new IntSettingRow(Loc.T("ls.target_fps"), () => profile.LSFG3Target, v => profile.LSFG3Target = v, 20, 480, 10, " fps")
+                { Hint = Loc.T("ls.target_fps.hint"), EnabledWhen = adaptive },
 
-            new EnumSettingRow("Tamanho do LSFG", ["PERFORMANCE", "BALANCED"],
-                () => profile.LSFGSize, v => profile.LSFGSize = v, ["Desempenho", "Equilibrado"]),
+            new EnumSettingRow(Loc.T("ls.lsfg_size"), ["PERFORMANCE", "BALANCED"],
+                () => profile.LSFGSize, v => profile.LSFGSize = v, [Loc.T("ls.lsfg_size.performance"), Loc.T("ls.lsfg_size.balanced")]),
 
-            new IntSettingRow("Flow scale", () => profile.LSFGFlowScale, v => profile.LSFGFlowScale = v, 25, 100, 5, "%", slider: true),
+            new IntSettingRow(Loc.T("ls.flow_scale"), () => profile.LSFGFlowScale, v => profile.LSFGFlowScale = v, 25, 100, 5, "%", slider: true),
 
             // Valores extraídos de LosslessScaling.dll (enums reais); gravar um valor fora deles impede o LS de abrir.
-            new EnumSettingRow("Tipo de escalonamento", ["Off", "LS1", "FSR", "NIS", "SGSR", "BicubicCAS", "Anime4K", "XBR", "SharpBilinear", "Integer", "Nearest"],
+            new EnumSettingRow(Loc.T("ls.scaling_type"), ["Off", "LS1", "FSR", "NIS", "SGSR", "BicubicCAS", "Anime4K", "XBR", "SharpBilinear", "Integer", "Nearest"],
                 () => profile.ScalingType, v => profile.ScalingType = v)
-                { Section = "Escala de imagem" },
+                { Section = Loc.T("ls.section.scaling") },
 
-            new DoubleSettingRow("Fator de escala", () => profile.ScaleFactor, v => profile.ScaleFactor = v, 1.0, 3.0, 0.05),
+            new DoubleSettingRow(Loc.T("ls.scale_factor"), () => profile.ScaleFactor, v => profile.ScaleFactor = v, 1.0, 3.0, 0.05),
 
-            new IntSettingRow("Nitidez", () => profile.Sharpness, v => profile.Sharpness = v, 0, 10, 1, slider: true),
+            new IntSettingRow(Loc.T("ls.sharpness"), () => profile.Sharpness, v => profile.Sharpness = v, 0, 10, 1, slider: true),
 
-            new EnumSettingRow("Sincronização", ["OFF", "DEFAULT", "VSYNC1", "VSYNC2", "VSYNC3", "VSYNC4"],
+            new EnumSettingRow(Loc.T("ls.sync"), ["OFF", "DEFAULT", "VSYNC1", "VSYNC2", "VSYNC3", "VSYNC4"],
                 () => profile.SyncMode, v => profile.SyncMode = v)
-                { Section = "Exibição" },
+                { Section = Loc.T("ls.section.display") },
 
-            new BoolSettingRow("Suporte G-Sync/FreeSync", () => profile.GsyncSupport, v => profile.GsyncSupport = v),
-            new BoolSettingRow("Suporte HDR", () => profile.HdrSupport, v => profile.HdrSupport = v),
-            new BoolSettingRow("Mostrar FPS", () => profile.DrawFps, v => profile.DrawFps = v),
+            new BoolSettingRow(Loc.T("ls.gsync"), () => profile.GsyncSupport, v => profile.GsyncSupport = v),
+            new BoolSettingRow(Loc.T("ls.hdr"), () => profile.HdrSupport, v => profile.HdrSupport = v),
+            new BoolSettingRow(Loc.T("ls.show_fps"), () => profile.DrawFps, v => profile.DrawFps = v),
         };
 
         return _rows;
@@ -192,8 +192,8 @@ public partial class OverlayWindow : Window
         void Changed() => _monitoring.Save();
 
         string? Why(string key) =>
-            !_monitoring.Status.Afterburner ? "Abra o MSI Afterburner para ler este sensor"
-            : !_monitoring.IsAvailable(key) ? "Indisponível neste hardware"
+            !_monitoring.Status.Afterburner ? Loc.T("mon.why.open_ab")
+            : !_monitoring.IsAvailable(key) ? Loc.T("mon.why.hardware")
             : null;
 
         BoolSettingRow Metric(string label, string key, string? section = null) => new(label,
@@ -209,71 +209,72 @@ public partial class OverlayWindow : Window
             () => cfg.Has(key), on => { cfg.Set(key, on); Changed(); })
         {
             EnabledWhen = () => cfg.Has(parentKey),
-            HintWhen = () => cfg.Has(parentKey) ? null : $"Ligue \"{parentLabel}\" primeiro",
+            HintWhen = () => cfg.Has(parentKey) ? null : Loc.T("mon.turn_on_first", parentLabel),
         };
 
         var gpuNames = gpus.Count > 0 ? gpus.ToArray() : ["—"];
         var rows = new List<SettingRow>
         {
-            new MonitoringMasterRow("Exibição do monitoramento", cfg, () => _monitoring.Status, () => _monitoring.ActiveMetricCount, () => { Changed(); RefreshAll(); },
+            new MonitoringMasterRow(Loc.T("mon.master"), cfg, () => _monitoring.Status, () => _monitoring.ActiveMetricCount, () => { Changed(); RefreshAll(); },
                 () => _afterburnerInstalled || _monitoring.Status.Afterburner, () => _openingMonitoring, () => _ = OpenMonitoringAsync()),
 
-            new EnumSettingRow("GPU monitorada", gpuNames, () => cfg.GpuName, v => { cfg.GpuName = v; Changed(); },
+            new EnumSettingRow(Loc.T("mon.gpu"), gpuNames, () => cfg.GpuName, v => { cfg.GpuName = v; Changed(); },
                 gpuNames.Select(ShortGpuName).ToArray(), forceStepper: true)
             {
-                Section = "GPU",
+                Section = Loc.T("mon.section.gpu"),
                 EnabledWhen = () => gpus.Count > 1,
-                HintWhen = () => gpus.Count > 1 ? null : gpus.Count == 1 ? "Só há uma GPU neste PC" : "Abra o MSI Afterburner para listar as GPUs",
+                HintWhen = () => gpus.Count > 1 ? null : Loc.T(gpus.Count == 1 ? "mon.gpu.single" : "mon.gpu.open_ab"),
             },
-            Metric("Temperatura", MetricKeys.GpuTemp),
-            Metric("Uso", MetricKeys.GpuUse),
-            Metric("Frequência", MetricKeys.GpuClock),
-            Metric("Uso de VRAM", MetricKeys.GpuVram),
-            Metric("Consumo", MetricKeys.GpuPower),
-            Metric("Tensão", MetricKeys.GpuVolt),
+            Metric(Loc.T("mon.temperature"), MetricKeys.GpuTemp),
+            Metric(Loc.T("mon.usage"), MetricKeys.GpuUse),
+            Metric(Loc.T("mon.frequency"), MetricKeys.GpuClock),
+            Metric(Loc.T("mon.vram"), MetricKeys.GpuVram),
+            Metric(Loc.T("mon.power"), MetricKeys.GpuPower),
+            Metric(Loc.T("mon.voltage"), MetricKeys.GpuVolt),
 
-            Metric("Temperatura", MetricKeys.CpuTemp, "CPU"),
-            Metric("Uso", MetricKeys.CpuUse),
-            Metric("Frequência", MetricKeys.CpuClock),
-            Metric("Consumo", MetricKeys.CpuPower),
-            Metric("Tensão", MetricKeys.CpuVolt),
+            Metric(Loc.T("mon.temperature"), MetricKeys.CpuTemp, Loc.T("mon.section.cpu")),
+            Metric(Loc.T("mon.usage"), MetricKeys.CpuUse),
+            Metric(Loc.T("mon.frequency"), MetricKeys.CpuClock),
+            Metric(Loc.T("mon.power"), MetricKeys.CpuPower),
+            Metric(Loc.T("mon.voltage"), MetricKeys.CpuVolt),
 
-            Metric("Uso", MetricKeys.RamUse, "RAM"),
-            Metric("Frequência", MetricKeys.RamClock),
+            Metric(Loc.T("mon.usage"), MetricKeys.RamUse, Loc.T("mon.section.ram")),
+            Metric(Loc.T("mon.frequency"), MetricKeys.RamClock),
 
-            new BoolSettingRow("FPS atual", () => cfg.Has(MetricKeys.Fps), on => { cfg.Set(MetricKeys.Fps, on); Changed(); }) { Section = "FPS" },
-            Graph("FPS com gráfico", MetricKeys.FpsGraph, MetricKeys.Fps, "FPS atual"),
-            new BoolSettingRow("Média (AVG)", () => cfg.Has(MetricKeys.FpsAvg), on => { cfg.Set(MetricKeys.FpsAvg, on); Changed(); }),
-            new BoolSettingRow("Frametime", () => cfg.Has(MetricKeys.FrameTime), on => { cfg.Set(MetricKeys.FrameTime, on); Changed(); }),
-            Graph("Frametime com gráfico", MetricKeys.FrameTimeGraph, MetricKeys.FrameTime, "Frametime"),
-            new IntSettingRow("Largura dos gráficos", () => cfg.GraphWidth, v => { cfg.GraphWidth = v; Changed(); }, 8, 48, 4, "", slider: true)
+            new BoolSettingRow(Loc.T("mon.fps"), () => cfg.Has(MetricKeys.Fps), on => { cfg.Set(MetricKeys.Fps, on); Changed(); }) { Section = Loc.T("mon.section.fps") },
+            Graph(Loc.T("mon.fps_graph"), MetricKeys.FpsGraph, MetricKeys.Fps, Loc.T("mon.fps")),
+            new BoolSettingRow(Loc.T("mon.average"), () => cfg.Has(MetricKeys.FpsAvg), on => { cfg.Set(MetricKeys.FpsAvg, on); Changed(); }),
+            new BoolSettingRow(Loc.T("mon.frametime"), () => cfg.Has(MetricKeys.FrameTime), on => { cfg.Set(MetricKeys.FrameTime, on); Changed(); }),
+            Graph(Loc.T("mon.frametime_graph"), MetricKeys.FrameTimeGraph, MetricKeys.FrameTime, Loc.T("mon.frametime")),
+            new IntSettingRow(Loc.T("mon.graph_width"), () => cfg.GraphWidth, v => { cfg.GraphWidth = v; Changed(); }, 8, 48, 4, "", slider: true)
             {
                 EnabledWhen = () => cfg.Has(MetricKeys.FpsGraph) || cfg.Has(MetricKeys.FrameTimeGraph),
-                HintWhen = () => cfg.Has(MetricKeys.FpsGraph) || cfg.Has(MetricKeys.FrameTimeGraph) ? null : "Ligue um gráfico primeiro",
+                HintWhen = () => cfg.Has(MetricKeys.FpsGraph) || cfg.Has(MetricKeys.FrameTimeGraph) ? null : Loc.T("mon.graph_first"),
             },
 
-            new PositionRow("Posição na tela", () => cfg.Position, v => { cfg.Position = v; Changed(); }) { Section = "Aparência" },
-            new IntSettingRow("Tamanho do texto", () => cfg.TextScale, v => { cfg.TextScale = v; Changed(); }, 50, 150, 10, "%", slider: true),
+            new PositionRow(Loc.T("mon.position"), () => cfg.Position, v => { cfg.Position = v; Changed(); }) { Section = Loc.T("section.appearance") },
+            new IntSettingRow(Loc.T("mon.text_size"), () => cfg.TextScale, v => { cfg.TextScale = v; Changed(); }, 50, 150, 10, "%", slider: true),
         };
 
         // Preset stepper plus R/G/B sliders: the sliders reach any color, the stepper jumps to a named one.
         IEnumerable<SettingRow> ColorRows(string label, Func<string> get, Action<string> set, string? section)
         {
-            var names = ColorPresets.All.Select(p => p.Name).ToArray();
-            yield return new EnumSettingRow(label, names, () => ColorPresets.NameOf(get()) ?? ColorPresets.CustomName,
-                name =>
+            var keys = ColorPresets.All.Select(p => p.Key).ToArray();
+            var names = keys.Select(k => Loc.T($"preset.{k}")).ToArray();
+            yield return new EnumSettingRow(label, keys, () => ColorPresets.NameOf(get()) ?? Loc.T("preset.custom"),
+                key =>
                 {
-                    var preset = ColorPresets.All.FirstOrDefault(p => p.Name == name);
+                    var preset = ColorPresets.All.FirstOrDefault(p => p.Key == key);
                     if (preset.Hex is not null) set(preset.Hex);
-                }, forceStepper: true)
+                }, names, forceStepper: true)
             {
                 Section = section,
                 SwatchHex = get,
                 HintWhen = () => $"#{get()}",
             };
-            yield return Channel("Vermelho", 0);
-            yield return Channel("Verde", 1);
-            yield return Channel("Azul", 2);
+            yield return Channel(Loc.T("mon.red"), 0);
+            yield return Channel(Loc.T("mon.green"), 1);
+            yield return Channel(Loc.T("mon.blue"), 2);
 
             IntSettingRow Channel(string name, int index) => new(name,
                 () => index switch { 0 => ColorPresets.Split(get()).R, 1 => ColorPresets.Split(get()).G, _ => ColorPresets.Split(get()).B },
@@ -285,29 +286,33 @@ public partial class OverlayWindow : Window
         }
 
         // One group at a time keeps the screen short: pick the group, then edit its label and value colors.
-        rows.Add(new EnumSettingRow("Grupo", ColorGroups.All.Select(g => g.Key).ToArray(), () => _colorGroup, v => _colorGroup = v,
-            ColorGroups.All.Select(g => g.Name).ToArray(), forceStepper: true) { Section = "Cores" });
-        rows.AddRange(ColorRows("Cor do rótulo", () => cfg.LabelColor(_colorGroup), v => { cfg.SetColors(_colorGroup, label: v); Changed(); }, null));
-        rows.AddRange(ColorRows("Cor dos valores", () => cfg.ValueColor(_colorGroup), v => { cfg.SetColors(_colorGroup, value: v); Changed(); }, null));
+        rows.Add(new EnumSettingRow(Loc.T("mon.color_group"), ColorGroups.All.Select(g => g.Key).ToArray(), () => _colorGroup, v => _colorGroup = v,
+            ColorGroups.All.Select(g => g.Name).ToArray(), forceStepper: true) { Section = Loc.T("mon.section.colors") });
+        rows.AddRange(ColorRows(Loc.T("mon.color.label"), () => cfg.LabelColor(_colorGroup), v => { cfg.SetColors(_colorGroup, label: v); Changed(); }, null));
+        rows.AddRange(ColorRows(Loc.T("mon.color.value"), () => cfg.ValueColor(_colorGroup), v => { cfg.SetColors(_colorGroup, value: v); Changed(); }, null));
         return _rows = rows;
     }
 
     private List<SettingRow> BuildSettingsRows()
     {
         var s = _appSettings.Current;
+        var languages = Loc.Instance.Available;
         return
         [
-            new EnumSettingRow("Tema", [ThemeManager.Dark, ThemeManager.Light], () => ThemeManager.Normalize(s.Theme),
-                v => { s.Theme = v; _appSettings.Save(); }, ["Escuro", "Claro"]) { Section = "Aparência" },
-            new IntSettingRow("Opacidade do painel", () => s.PanelOpacity, v => { s.PanelOpacity = v; _appSettings.Save(); }, 50, 100, 5, "%", slider: true)
-                { Hint = "Menor = mais transparente, o jogo aparece atrás" },
-            new IntSettingRow("Escala da interface", () => s.UiScale, v => { s.UiScale = v; _appSettings.Save(); }, 75, 150, 5, "%", slider: true)
-                { Hint = "Reduzida sozinha se não couber na tela" },
-            new BoolSettingRow("Iniciar com o Windows", StartupRegistration.IsEnabled, StartupRegistration.SetEnabled) { Section = "Inicialização" },
-            new EnumSettingRow("Ao iniciar", ["window", "tray"], () => s.StartInTray ? "tray" : "window",
-                v => { s.StartInTray = v == "tray"; _appSettings.Save(); }, ["Abrir a janela", "Só na bandeja"]),
-            new BoolSettingRow("Abrir com um clique na bandeja", () => s.TrayClickOpens, on => { s.TrayClickOpens = on; _appSettings.Save(); })
-                { Hint = "Desligado: só o clique duplo abre" },
+            new EnumSettingRow(Loc.T("set.theme"), [ThemeManager.Dark, ThemeManager.Light], () => ThemeManager.Normalize(s.Theme),
+                v => { s.Theme = v; _appSettings.Save(); }, [Loc.T("set.theme.dark"), Loc.T("set.theme.light")]) { Section = Loc.T("section.appearance") },
+            new IntSettingRow(Loc.T("set.opacity"), () => s.PanelOpacity, v => { s.PanelOpacity = v; _appSettings.Save(); }, 50, 100, 5, "%", slider: true)
+                { Hint = Loc.T("set.opacity.hint") },
+            new IntSettingRow(Loc.T("set.scale"), () => s.UiScale, v => { s.UiScale = v; _appSettings.Save(); }, 75, 150, 5, "%", slider: true)
+                { Hint = Loc.T("set.scale.hint") },
+            new EnumSettingRow(Loc.T("set.language"), languages.Select(l => l.Code).ToArray(), () => Loc.Instance.Code,
+                v => { s.Language = v; _appSettings.Save(); }, languages.Select(l => l.Name).ToArray(), forceStepper: true),
+
+            new BoolSettingRow(Loc.T("set.start_with_windows"), StartupRegistration.IsEnabled, StartupRegistration.SetEnabled) { Section = Loc.T("set.section.startup") },
+            new EnumSettingRow(Loc.T("set.start_mode"), ["window", "tray"], () => s.StartInTray ? "tray" : "window",
+                v => { s.StartInTray = v == "tray"; _appSettings.Save(); }, [Loc.T("set.start_mode.window"), Loc.T("set.start_mode.tray")]),
+            new BoolSettingRow(Loc.T("set.tray_click"), () => s.TrayClickOpens, on => { s.TrayClickOpens = on; _appSettings.Save(); })
+                { Hint = Loc.T("set.tray_click.hint") },
         ];
     }
 
@@ -348,11 +353,11 @@ public partial class OverlayWindow : Window
         {
             _monitoring.Config.Enabled = true;
             _monitoring.Save();
-            StatusText.Text = "Monitoramento ligado.";
+            StatusText.Text = Loc.T("mon.enabled");
         }
         else
         {
-            StatusText.Text = "Não foi possível abrir o MSI Afterburner.";
+            StatusText.Text = Loc.T("mon.open_failed");
         }
         RefreshAll();
     }
@@ -379,6 +384,20 @@ public partial class OverlayWindow : Window
     {
         UpdateChrome();
         if (_appSettings.Current.UiScale != _appliedScale) ApplyScale();
+        // Every row label was built with the old language: rebuild them, keeping the row the user is on.
+        if (Loc.Instance.Code != _appliedLanguage) RebuildRowsKeepingSelection();
+    }
+
+    private string _appliedLanguage = Loc.Instance.Code;
+
+    private void RebuildRowsKeepingSelection()
+    {
+        _appliedLanguage = Loc.Instance.Code;
+        var selected = Math.Max(RowsList.SelectedIndex, 0);
+        var status = StatusText.Text;
+        RebuildRows();
+        RowsList.SelectedIndex = Math.Min(selected, _rows.Count - 1);
+        StatusText.Text = status;
     }
 
     private const double BaseWidth = 920, BaseHeight = 580;
@@ -451,10 +470,10 @@ public partial class OverlayWindow : Window
     private void OnSelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
     {
         if (RowsList.SelectedItem is not SettingRow row) return;
-        HintAText.Text = row.IsMaster ? (_category == Category.LosslessScaling ? "Ligar / desligar LS" : "Ligar / desligar")
-            : row.IsToggle ? "Ligar / desligar"
-            : row.IsPosition ? "Próximo canto"
-            : "Próximo valor";
+        HintAText.Text = Loc.T(row.IsMaster ? (_category == Category.LosslessScaling ? "hint.toggle_ls" : "hint.toggle")
+            : row.IsToggle ? "hint.toggle"
+            : row.IsPosition ? "hint.corner"
+            : "hint.next_value");
     }
 
     private void OnSegmentClick(object sender, RoutedEventArgs e)
@@ -655,7 +674,7 @@ public partial class OverlayWindow : Window
             case GamepadButton.X:
                 if (_category != Category.LosslessScaling) break;
                 _processService.RestartIfRunning(_config);
-                StatusText.Text = "Lossless Scaling reiniciado.";
+                StatusText.Text = Loc.T("ls.restarted");
                 break;
 
             case GamepadButton.B:
@@ -765,7 +784,7 @@ public partial class OverlayWindow : Window
 
         if (!up)
         {
-            StatusText.Text = "Não foi possível abrir o Lossless Scaling.";
+            StatusText.Text = Loc.T("ls.open_failed");
             return;
         }
 
@@ -858,16 +877,16 @@ public partial class OverlayWindow : Window
             if (_config.AutoRestartOnSave && _processService.IsRunning)
             {
                 _processService.RestartIfRunning(_config);
-                StatusText.Text = "Configurações salvas e Lossless Scaling reiniciado.";
+                StatusText.Text = Loc.T("ls.saved_restarted");
             }
             else
             {
-                StatusText.Text = "Configurações salvas.";
+                StatusText.Text = Loc.T("ls.saved");
             }
         }
         catch (Exception ex)
         {
-            StatusText.Text = $"Erro ao salvar: {ex.Message}";
+            StatusText.Text = Loc.T("ls.save_error", ex.Message);
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
+using GamePlus.Services;
 
 namespace GamePlus.Overlay;
 
@@ -116,14 +117,14 @@ public sealed class ActionRow : SettingRow
     public Func<int>? Countdown { get; init; }
     public override string StatusText => _state() switch
     {
-        MasterState.NotInstalled => "Lossless Scaling não está instalado neste PC",
-        MasterState.Closed => "Lossless Scaling fechado — será aberto ao ligar",
-        MasterState.Opening => "Abrindo o Lossless Scaling…",
-        MasterState.Starting => $"A geração de quadros inicia em {Countdown?.Invoke()}s — A cancela",
-        MasterState.Scaling => "Ativo",
-        _ => "Desligado",
+        MasterState.NotInstalled => Loc.T("ls.not_installed"),
+        MasterState.Closed => Loc.T("ls.closed"),
+        MasterState.Opening => Loc.T("ls.opening"),
+        MasterState.Starting => Loc.T("ls.starting", Countdown?.Invoke() ?? 0),
+        MasterState.Scaling => Loc.T("ls.active"),
+        _ => Loc.T("common.off"),
     };
-    public override IReadOnlyList<string> Pills => _state() == MasterState.NotInstalled ? ["Disponível na Steam"] : _pills();
+    public override IReadOnlyList<string> Pills => _state() == MasterState.NotInstalled ? [Loc.T("ls.pill.steam")] : _pills();
 
     public override void Increment() => _action();
     public override void Decrement() { }
@@ -214,7 +215,7 @@ public sealed class BoolSettingRow : SettingRow
 
     public override bool IsToggle => true;
     public override bool IsOn => _getter();
-    public override string ValueText => _getter() ? "Ligado" : "Desligado";
+    public override string ValueText => Loc.T(_getter() ? "common.on" : "common.off");
 
     public override void Increment() => _setter(!_getter());
     public override void Decrement() => _setter(!_getter());
@@ -322,13 +323,6 @@ public sealed class DoubleSettingRow : SettingRow
 /// <summary>Screen-corner picker: a 3x3 grid (0 = top left ... 8 = bottom right); left/right walk through the cells.</summary>
 public sealed class PositionRow : SettingRow
 {
-    private static readonly string[] Names =
-    [
-        "Superior esquerdo", "Superior centro", "Superior direito",
-        "Centro esquerdo", "Centro", "Centro direito",
-        "Inferior esquerdo", "Inferior centro", "Inferior direito",
-    ];
-
     private readonly Func<int> _getter;
     private readonly Action<int> _setter;
 
@@ -338,7 +332,7 @@ public sealed class PositionRow : SettingRow
         _setter = setter;
     }
 
-    public static string NameOf(int position) => Names[Math.Clamp(position, 0, 8)];
+    public static string NameOf(int position) => Loc.T($"pos.{Math.Clamp(position, 0, 8)}");
 
     public override bool IsPosition => true;
     private int? _pending;
@@ -405,19 +399,19 @@ public sealed class MonitoringMasterRow : SettingRow
         get
         {
             var s = _status();
-            if (_opening()) return s.Afterburner ? "Abrindo o RTSS…" : "Abrindo o MSI Afterburner…";
-            if (Missing) return "MSI Afterburner não está instalado neste PC";
-            if (!s.Afterburner) return "MSI Afterburner fechado — será aberto ao ligar";
-            if (!s.Rtss) return "RTSS fechado — será aberto ao ligar";
-            if (!_config.Enabled) return "Desligado";
-            return s.Game is null ? "Ligado — aparece quando um jogo estiver rodando" : $"Visível em {s.Game}";
+            if (_opening()) return Loc.T(s.Afterburner ? "mon.opening_rtss" : "mon.opening_ab");
+            if (Missing) return Loc.T("mon.ab_missing");
+            if (!s.Afterburner) return Loc.T("mon.ab_closed");
+            if (!s.Rtss) return Loc.T("mon.rtss_closed");
+            if (!_config.Enabled) return Loc.T("common.off");
+            return s.Game is null ? Loc.T("mon.on_no_game") : Loc.T("mon.on_game", s.Game);
         }
     }
 
     public override IReadOnlyList<string> Pills =>
-        Missing ? ["Requer Afterburner e RTSS"]
-        : !Ready ? ["Sensores indisponíveis"]
-        : [$"{_metricCount()} métricas", PositionRow.NameOf(_config.Position), $"Texto {_config.TextScale}%"];
+        Missing ? [Loc.T("mon.pill.requires")]
+        : !Ready ? [Loc.T("mon.pill.no_sensors")]
+        : [Loc.T("mon.pill.metrics", _metricCount()), PositionRow.NameOf(_config.Position), Loc.T("mon.pill.text", _config.TextScale)];
 
     public override void Increment()
     {

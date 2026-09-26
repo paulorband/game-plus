@@ -56,6 +56,7 @@ public partial class App : Application
         _configService = new AppConfigService();
         _config = _configService.Load();
         _appSettings = new AppSettingsService();
+        Loc.Instance.Select(_appSettings.Current.Language);
         ApplyAppearance();
         _appSettings.Changed += ApplyAppearance;
         _settingsService = new LosslessScalingSettingsService();
@@ -66,8 +67,7 @@ public partial class App : Application
         if (!_settingsService.SettingsFileExists)
         {
             MessageBox.Show(
-                $"Não encontrei o Settings.xml do Lossless Scaling em:\n{LosslessScalingSettingsService.SettingsPath}\n\n" +
-                "Abra o Lossless Scaling pelo menos uma vez para gerar o arquivo de configurações, depois reinicie este app.",
+                Loc.T("app.ls_settings_missing", LosslessScalingSettingsService.SettingsPath),
                 "Game Plus",
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
@@ -87,7 +87,7 @@ public partial class App : Application
         {
             // LS only reads Settings.xml at startup, so a running instance must be relaunched to pick up the copy.
             if (_processService.IsRunning) _processService.RestartIfRunning(_config);
-            _trayIcon.ShowBalloonTip(2000, "Lossless Scaling", "Configurações da cópia local aplicadas.", ToolTipIcon.None);
+            _trayIcon.ShowBalloonTip(2000, "Lossless Scaling", Loc.T("tray.local_applied"), ToolTipIcon.None);
         }
 
         // The window is the default; "start in tray" is opt-in. --overlay always opens it.
@@ -97,23 +97,40 @@ public partial class App : Application
         }
     }
 
-    // Theme and panel opacity are app-wide resources, so they are applied here rather than by any one window.
-    private void ApplyAppearance() => ThemeManager.Apply(_appSettings.Current.Theme, _appSettings.Current.PanelOpacity);
+    // Theme, panel opacity and language are app-wide, so they are applied here rather than by any one window.
+    private void ApplyAppearance()
+    {
+        ThemeManager.Apply(_appSettings.Current.Theme, _appSettings.Current.PanelOpacity);
+        Loc.Instance.Select(_appSettings.Current.Language);
+    }
+
+    private ToolStripMenuItem _openItem = null!, _startupItem = null!, _exitItem = null!;
+
+    private void RetitleTrayMenu()
+    {
+        _openItem.Text = Loc.T("tray.open");
+        _startupItem.Text = Loc.T("tray.start_with_windows");
+        _exitItem.Text = Loc.T("tray.exit");
+    }
 
     private void SetupTrayIcon()
     {
         var menu = new ContextMenuStrip();
-        menu.Items.Add("Abrir configurações", null, (_, _) => ShowOverlay());
+        _openItem = new ToolStripMenuItem(null, null, (_, _) => ShowOverlay());
+        menu.Items.Add(_openItem);
         menu.Items.Add(new ToolStripSeparator());
 
-        var startupItem = new ToolStripMenuItem("Iniciar com o Windows") { CheckOnClick = true, Checked = StartupRegistration.IsEnabled() };
-        startupItem.Click += (_, _) => StartupRegistration.SetEnabled(startupItem.Checked);
-        menu.Items.Add(startupItem);
+        _startupItem = new ToolStripMenuItem { CheckOnClick = true, Checked = StartupRegistration.IsEnabled() };
+        _startupItem.Click += (_, _) => StartupRegistration.SetEnabled(_startupItem.Checked);
+        menu.Items.Add(_startupItem);
         // The overlay's Settings category can flip this too, so re-read it whenever the menu opens.
-        menu.Opening += (_, _) => startupItem.Checked = StartupRegistration.IsEnabled();
+        menu.Opening += (_, _) => _startupItem.Checked = StartupRegistration.IsEnabled();
 
         menu.Items.Add(new ToolStripSeparator());
-        menu.Items.Add("Sair", null, (_, _) => Shutdown());
+        _exitItem = new ToolStripMenuItem(null, null, (_, _) => Shutdown());
+        menu.Items.Add(_exitItem);
+        RetitleTrayMenu();
+        Loc.Instance.LanguageChanged += RetitleTrayMenu;
 
         _trayIcon = new NotifyIcon
         {
@@ -149,11 +166,11 @@ public partial class App : Application
             var settings = _settingsService.Load();
             var (key, modifiers) = LosslessScalingSettingsService.ParseHotkey(settings);
             HotkeyInputSender.SendHotkey(key, modifiers);
-            _trayIcon.ShowBalloonTip(1000, "Lossless Scaling", "Alternado", ToolTipIcon.None);
+            _trayIcon.ShowBalloonTip(1000, "Lossless Scaling", Loc.T("tray.toggled"), ToolTipIcon.None);
         }
         catch (Exception ex)
         {
-            _trayIcon.ShowBalloonTip(2000, "Game Plus", $"Falha ao alternar: {ex.Message}", ToolTipIcon.Error);
+            _trayIcon.ShowBalloonTip(2000, "Game Plus", Loc.T("tray.toggle_failed", ex.Message), ToolTipIcon.Error);
         }
     }
 
@@ -198,7 +215,7 @@ public partial class App : Application
         catch (Exception ex)
         {
             Log.Error("ShowOverlay", ex);
-            _trayIcon.ShowBalloonTip(4000, "Game Plus", $"Não foi possível abrir o overlay: {ex.Message}", ToolTipIcon.Error);
+            _trayIcon.ShowBalloonTip(4000, "Game Plus", Loc.T("tray.overlay_failed", ex.Message), ToolTipIcon.Error);
             _overlay = null;
         }
     }

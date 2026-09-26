@@ -47,6 +47,7 @@ src/GamePlus/
   Models/
     AppConfig.cs              config.json (combos, intervalos, caminho do LS...)
     MonitoringConfig.cs       Data\monitoring.json (métricas ligadas, GPU, posição 0-8, tamanho) + MetricKeys
+    AppSettings.cs            Data\settings.json (tema, idioma, opacidade, escala, início, clique na bandeja)
     LosslessScalingSettings.cs  modelo do Settings.xml do LS (XmlSerializer)
   Services/                   lógica sem UI
     GamepadService.cs         polling XInput, eventos de botão e combos
@@ -54,6 +55,8 @@ src/GamePlus/
     HotkeyInputSender.cs      SendInput, foreground, diagnóstico de janelas
     GameWindowFinder.cs       escolhe a janela do jogo para devolver o foco
     MonitoringConfigService.cs  lê/grava Data\monitoring.json
+    AppSettingsService.cs     Data\settings.json + evento Changed (tudo que é global reage a ele)
+    Localization.cs           Loc: textos da UI por idioma (JSON), indexador com atualização ao vivo
     Monitoring/               monitoramento (Afterburner + RTSS), sem UI
       MahmReader.cs           sensores do Afterburner (memória compartilhada MAHM, somente leitura)
       RtssClient.cs           FPS do jogo + escrita do OSD no slot próprio do RTSS
@@ -65,9 +68,12 @@ src/GamePlus/
     StartupRegistration.cs    "Iniciar com o Windows" (HKCU Run)
     Log.cs                    log em Data\app.log + watchdog
   Overlay/                    tudo que é tela
-    Theme.xaml                tokens (cores, fontes) e estilos do design system
+    Theme.xaml                estilos do design system (só DynamicResource para cores)
+    Themes/Colors.Dark.xaml   pincéis do tema escuro; Colors.Light.xaml tem as MESMAS chaves
+    ThemeManager.cs           troca o dicionário de cores em execução e aplica a opacidade do painel
     OverlayWindow.xaml(.cs)   janela, templates de linha, navegação por controle e mouse
     SettingRow.cs             modelo de linha (uma classe por tipo de controle)
+  Languages/                  en.json, pt-BR.json (embutidos e copiados ao lado do exe; ver "Idiomas")
   Properties/PublishProfiles/Portable.pubxml
 ```
 
@@ -96,12 +102,12 @@ Tipos de linha (`Overlay/SettingRow.cs`):
 + estilo em `Theme.xaml`, seguindo o componente equivalente do design system.
 
 Regras visuais:
-- Cores/fontes só via recursos de `Theme.xaml` (`AccentBrush`, `FocusBrush`, `Text2Brush`...). Não escreva hex solto em telas novas,
-  exceto valores já definidos no design system.
+- Cores só via pincéis dos dicionários de tema (`AccentBrush`, `FocusBrush`, `Text2Brush`...) com **`DynamicResource`** (com `StaticResource` a
+  cor não acompanha a troca de tema). Não escreva hex solto em telas novas. Cor nova = chave nova **nos dois** `Colors.*.xaml`.
 - Estado de foco = anel `FocusBrush` (via `DataTrigger` em `IsSelected` do `ListBoxItem`). Todo controle novo precisa ter foco visível.
 - Linhas indisponíveis ficam com opacidade 0.42 e são puladas pela navegação (`EnabledWhen`).
 - Toggle pequeno 52×30 (linhas), grande 68×38 (card mestre). Botões de dica (A/B/X/Y) usam `BtnA/B/X/YBrush`.
-- Textos em português; rótulos curtos; dicas (`Hint`) só quando a opção não é autoexplicativa.
+- Nenhum texto fixo na UI: tudo por `Loc.T("chave")` (código) ou `{Binding [chave], Source={x:Static svc:Loc.Instance}}` (XAML), com a chave nos dois JSON. Rótulos curtos (o inglês costuma ser mais longo: confira o segmentado); dicas (`Hint`) só quando a opção não é autoexplicativa.
 
 ## Controle: regras que não podem quebrar
 
@@ -154,6 +160,16 @@ lê os sensores do Afterburner e escreve o texto num slot de OSD do RTSS. Tudo s
 - **Largura dos gráficos** (`GraphWidth`, 8-48 caracteres, padrão 32) vai na largura negativa do objeto de gráfico do RTSS.
 - **Cores por grupo** (GPU, CPU, RAM, FPS, Frametime; `Colors[grupo] = {Label, Value}` em `monitoring.json`, "RRGGBB") vão como `<C=RRGGBB>`; a tela escolhe o grupo e edita o rótulo/valor dele. Presets nomeados (`ColorPresets`) mais
   sliders R/G/B para qualquer cor; um valor que não seja hex de 6 dígitos volta ao padrão ao carregar.
+## Configurações do app, temas, idiomas e escala
+
+Categoria "Configurações" (`BuildSettingsRows`), gravada em `Data\settings.json` por `AppSettingsService`. Cada mudança chama `Save()`, que dispara `Changed`:
+`App` reage (tema, opacidade, idioma, comportamento da bandeja) e o `OverlayWindow` também (escala, refazer as linhas se o idioma mudou). Linhas novas de config global seguem esse fluxo.
+
+- **Tema** (`dark`/`light`): `ThemeManager.Apply` troca o `Colors.*.xaml` mesclado em `Application.Resources`; a opacidade do painel (50-100%, padrão 95) só mexe no alfa de `PanelBrush`, definido no próprio `Application.Resources` para sobrepor o do tema. Fora dos temas: ícone, botões A/B/X/Y de texto fixo, glow verde.
+- **Idiomas**: `Loc` (`Services/Localization.cs`). Arquivos planos `{ "_name": "...", "_code": "...", "chave": "texto" }`. `en` e `pt-BR` vão embutidos no exe *e* são copiados para `Languages\` ao lado dele; qualquer `Languages\*.json` ali entra sozinho na lista (é assim que se adiciona um idioma, sem recompilar). Arquivo parcial vale: chave ausente cai para o inglês e depois para a própria chave. `Language` nulo segue o idioma do Windows. Trocar de idioma refaz as linhas (`RebuildRowsKeepingSelection`) e o menu da bandeja. Rótulos que dependem de dado em execução (nomes de posição, presets) usam chaves (`pos.N`, `preset.<chave>`).
+- **Escala** (`UiScale`, 75-150%): `LayoutTransform` no `Root` (920x580 de projeto) e janela com `SizeToContent`; `ApplyScale` limita ao tamanho da área de trabalho e recentraliza.
+- **Início**: padrão é abrir a janela ao iniciar (`StartInTray` = só bandeja; `--overlay` sempre abre). **Bandeja**: um clique abre (`TrayClickOpens`); desligado, só duplo clique.
+
 ## Instância única
 
 `App.OnStartup` cria o evento nomeado `Local\GamePlus.Show`. Quem o cria é a instância principal (escuta o sinal numa thread e chama `ShowOverlay`); uma segunda execução do exe só sinaliza e encerra, abrindo a janela como "Abrir configurações".
@@ -198,4 +214,4 @@ lê os sensores do Afterburner e escreve o texto num slot de OSD do RTSS. Tudo s
 
 ## Roadmap (ainda não implementado — definido no design system)
 
-Sistema, Perfis, Sobre, chip com o nome do jogo, repetição ao segurar ←/→ e passos maiores. Ao implementar, siga a seção "Overlay" acima e atualize este guia e o README.
+Sistema, Perfis, Sobre, chip com o nome do jogo e passos maiores. Ao implementar, siga a seção "Overlay" acima e atualize este guia e o README.

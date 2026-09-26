@@ -44,7 +44,7 @@ real, a lógica de controle/settings deste projeto pode ser reaproveitada.
 | D-Pad ou analógico esquerdo Cima/Baixo | Mover seleção entre os campos (segurar repete; passa do último para o primeiro e vice-versa) |
 | D-Pad ou analógico Esquerda | Diminuir/ciclar valor (segurar percorre os valores e aplica ao soltar, em campos com mais de 2 opções) |
 | D-Pad ou analógico Direita / A | Aumentar/ciclar valor (A aplica na hora) |
-| LB / RB | Trocar de categoria (Lossless Scaling / Monitoramento) |
+| LB / RB | Trocar de categoria (Lossless Scaling / Monitoramento / Configurações) |
 | LT / RT | Trocar de perfil do Lossless Scaling (quando há mais de um) |
 | Y | Salvar no Settings.xml |
 | X | Reiniciar o Lossless Scaling manualmente |
@@ -72,6 +72,25 @@ por sliders R/G/B), tudo pelo controle.
 - O FPS é o do jogo (o RTSS não mede os quadros gerados pelo Lossless Scaling).
 - As preferências ficam em `Data\monitoring.json`, ao lado do `.exe`.
 
+## Configurações do app
+
+A categoria **Configurações** (terceiro item da barra lateral) guarda as preferências do próprio Game Plus em `Data\settings.json`:
+
+- **Tema:** escuro (padrão) ou claro.
+- **Opacidade do painel:** 50 a 100% (só o fundo do painel; os textos continuam nítidos).
+- **Escala da interface:** 75 a 150%. Se não couber na tela (ex.: handheld 720p), é reduzida automaticamente.
+- **Idioma:** Português (Brasil) e English; por padrão segue o idioma do Windows.
+- **Iniciar com o Windows** e **Ao iniciar** (abrir a janela, que é o padrão, ou só na bandeja).
+- **Abrir com um clique na bandeja** (desligado: só o clique duplo abre).
+
+### Adicionar um idioma
+
+Os idiomas são arquivos JSON na pasta `Languages\` ao lado do `.exe` (`en.json` e `pt-BR.json` já vêm lá). Para criar outro, sem recompilar:
+
+1. Copie `en.json` para, por exemplo, `es.json`.
+2. Mude `_code` (ex.: `"es"`) e `_name` (nome que aparece na lista, ex.: `"Español"`) e traduza os valores (mantenha as chaves e os `{0}`).
+3. Abra o app: o idioma aparece em Configurações → Idioma. Traduções parciais funcionam: o que faltar aparece em inglês.
+
 ## Build e execução
 
 Requer .NET 10 SDK (Windows) com workload de desktop.
@@ -97,10 +116,10 @@ Não use arquivo único (`PublishSingleFile`): no ROG Xbox Ally X o overlay não
 com ele, mesmo sem compressão. Alternativa menor (~300 KB), que exige o
 .NET Desktop Runtime 10 instalado: `-p:SelfContained=false -p:PublishSingleFile=true`.
 
-Rode-o normalmente (ele minimiza direto para a bandeja do sistema). O app roda em instância única: abrir o .exe de novo só abre a janela do que já está rodando. Pelo menu
+Rode-o normalmente (por padrão ele abre a janela; nas Configurações dá para iniciar só na bandeja). O app roda em instância única: abrir o .exe de novo só abre a janela do que já está rodando. Pelo menu
 da bandeja dá pra:
 
-- Abrir as configurações (também com duplo clique no ícone)
+- Abrir as configurações (também com um clique no ícone, ou duplo clique se preferir; ver Configurações)
 - Ativar "Iniciar com o Windows"
 - Sair
 

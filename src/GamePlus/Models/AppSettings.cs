@@ -3,6 +3,9 @@ namespace GamePlus.Models;
 /// <summary>App-level preferences edited in the overlay's Settings category (Data\settings.json).</summary>
 public sealed class AppSettings
 {
+    /// <summary>Language code (file name of Languages\*.json); null follows the system language.</summary>
+    public string? Language { get; set; }
+
     /// <summary>"dark" or "light".</summary>
     public string Theme { get; set; } = "dark";
 
