@@ -32,6 +32,7 @@ public sealed class AppSettingsService
                 if (settings is not null)
                 {
                     settings.PanelOpacity = Math.Clamp(settings.PanelOpacity, 50, 100);
+                    settings.UiScale = Math.Clamp(settings.UiScale, 75, 150);
                     return settings;
                 }
             }

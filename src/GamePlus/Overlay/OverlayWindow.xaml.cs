@@ -60,6 +60,7 @@ public partial class OverlayWindow : Window
         _monitoring = monitoring;
         _appSettings = appSettings;
         _appSettings.Changed += OnAppSettingsChanged;
+        ApplyScale();
 
         Loaded += (_, _) =>
         {
@@ -300,6 +301,8 @@ public partial class OverlayWindow : Window
                 v => { s.Theme = v; _appSettings.Save(); }, ["Escuro", "Claro"]) { Section = "Aparência" },
             new IntSettingRow("Opacidade do painel", () => s.PanelOpacity, v => { s.PanelOpacity = v; _appSettings.Save(); }, 50, 100, 5, "%", slider: true)
                 { Hint = "Menor = mais transparente, o jogo aparece atrás" },
+            new IntSettingRow("Escala da interface", () => s.UiScale, v => { s.UiScale = v; _appSettings.Save(); }, 75, 150, 5, "%", slider: true)
+                { Hint = "Reduzida sozinha se não couber na tela" },
             new BoolSettingRow("Iniciar com o Windows", StartupRegistration.IsEnabled, StartupRegistration.SetEnabled) { Section = "Inicialização" },
             new EnumSettingRow("Ao iniciar", ["window", "tray"], () => s.StartInTray ? "tray" : "window",
                 v => { s.StartInTray = v == "tray"; _appSettings.Save(); }, ["Abrir a janela", "Só na bandeja"]),
@@ -372,7 +375,26 @@ public partial class OverlayWindow : Window
     private void OnRailMonClick(object sender, System.Windows.Input.MouseButtonEventArgs e) => SetCategory(Category.Monitoring);
 
     // Runs after App has applied the new theme; the rail items are styled from code, so they need a nudge.
-    private void OnAppSettingsChanged() => UpdateChrome();
+    private void OnAppSettingsChanged()
+    {
+        UpdateChrome();
+        if (_appSettings.Current.UiScale != _appliedScale) ApplyScale();
+    }
+
+    private const double BaseWidth = 920, BaseHeight = 580;
+    private int _appliedScale;
+
+    // Scales the whole panel and keeps it centered. Never larger than the work area (a 720p handheld at 150% would clip it).
+    private void ApplyScale()
+    {
+        _appliedScale = _appSettings.Current.UiScale;
+        var area = SystemParameters.WorkArea;
+        var fit = Math.Min((area.Width - 24) / BaseWidth, (area.Height - 24) / BaseHeight);
+        var scale = Math.Max(0.5, Math.Min(_appliedScale / 100.0, fit));
+        RootScale.ScaleX = RootScale.ScaleY = scale;
+        Left = area.Left + (area.Width - BaseWidth * scale) / 2;
+        Top = area.Top + (area.Height - BaseHeight * scale) / 2;
+    }
 
     private void OnRailSetClick(object sender, System.Windows.Input.MouseButtonEventArgs e) => SetCategory(Category.Settings);
 

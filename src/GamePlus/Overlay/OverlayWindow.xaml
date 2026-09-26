@@ -5,11 +5,11 @@
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
-        WindowStartupLocation="CenterScreen"
+        WindowStartupLocation="Manual"
         Topmost="True"
         ShowInTaskbar="False"
         ResizeMode="NoResize"
-        Width="920" Height="580"
+        SizeToContent="WidthAndHeight"
         FontFamily="Segoe UI Variable Text, Segoe UI"
         TextOptions.TextFormattingMode="Display"
         Focusable="True">
@@ -272,8 +272,12 @@
         </ResourceDictionary>
     </Window.Resources>
 
-    <Border CornerRadius="16" Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource Line2Brush}" BorderThickness="1"
+    <!-- Fixed 920x580 design size; UiScale enlarges/shrinks it (OverlayWindow.ApplyScale) and the window sizes to the result. -->
+    <Border x:Name="Root" Width="920" Height="580" CornerRadius="16" Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource Line2Brush}" BorderThickness="1"
             SnapsToDevicePixels="True">
+        <Border.LayoutTransform>
+            <ScaleTransform x:Name="RootScale" ScaleX="1" ScaleY="1"/>
+        </Border.LayoutTransform>
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="60"/>
