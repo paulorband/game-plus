@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using GamePlus.Models;
 using GamePlus.Services;
 using GamePlus.Services.Monitoring;
@@ -14,6 +14,7 @@ public partial class OverlayWindow : Window
     private readonly AppConfig _config;
     private readonly GamepadService _gamepad;
     private readonly MonitoringService _monitoring;
+    private readonly AppSettingsService _appSettings;
 
     private enum Category { LosslessScaling, Monitoring, Settings }
     private Category _category;
@@ -45,7 +46,8 @@ public partial class OverlayWindow : Window
         LosslessScalingProcessService processService,
         AppConfig config,
         GamepadService gamepad,
-        MonitoringService monitoring)
+        MonitoringService monitoring,
+        AppSettingsService appSettings)
     {
         Services.Log.Info("Overlay ctor: before InitializeComponent");
         InitializeComponent();
@@ -56,6 +58,7 @@ public partial class OverlayWindow : Window
         _config = config;
         _gamepad = gamepad;
         _monitoring = monitoring;
+        _appSettings = appSettings;
 
         Loaded += (_, _) =>
         {
@@ -286,10 +289,16 @@ public partial class OverlayWindow : Window
         return _rows = rows;
     }
 
-    private List<SettingRow> BuildSettingsRows() =>
-    [
-        new BoolSettingRow("Iniciar com o Windows", StartupRegistration.IsEnabled, StartupRegistration.SetEnabled) { Section = "Inicialização" },
-    ];
+    private List<SettingRow> BuildSettingsRows()
+    {
+        var s = _appSettings.Current;
+        return
+        [
+            new BoolSettingRow("Iniciar com o Windows", StartupRegistration.IsEnabled, StartupRegistration.SetEnabled) { Section = "Inicialização" },
+            new BoolSettingRow("Abrir com um clique na bandeja", () => s.TrayClickOpens, on => { s.TrayClickOpens = on; _appSettings.Save(); })
+                { Hint = "Desligado: só o clique duplo abre" },
+        ];
+    }
 
     // "NVIDIA GeForce RTX 5060 Ti" -> "RTX 5060 Ti": the stepper only has room for a short name.
     private static string ShortGpuName(string name) =>

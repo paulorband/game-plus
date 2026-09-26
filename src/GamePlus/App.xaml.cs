@@ -13,6 +13,7 @@ public partial class App : Application
     private Models.AppConfig _config = null!;
     private LosslessScalingSettingsService _settingsService = null!;
     private LosslessScalingProcessService _processService = null!;
+    private AppSettingsService _appSettings = null!;
     private GamepadService _gamepad = null!;
     private Services.Monitoring.MonitoringService _monitoring = null!;
     private NotifyIcon _trayIcon = null!;
@@ -54,6 +55,7 @@ public partial class App : Application
 
         _configService = new AppConfigService();
         _config = _configService.Load();
+        _appSettings = new AppSettingsService();
         _settingsService = new LosslessScalingSettingsService();
         _processService = new LosslessScalingProcessService();
 
@@ -114,7 +116,9 @@ public partial class App : Application
             Text = "Game Plus",
             ContextMenuStrip = menu,
         };
-        _trayIcon.DoubleClick += (_, _) => ShowOverlay();
+        // One click opens by default (a tray icon is a button, not a file); the setting restores the classic double click.
+        _trayIcon.MouseClick += (_, args) => { if (args.Button == MouseButtons.Left && _appSettings.Current.TrayClickOpens) ShowOverlay(); };
+        _trayIcon.DoubleClick += (_, _) => { if (!_appSettings.Current.TrayClickOpens) ShowOverlay(); };
     }
 
     // Uses the exe's embedded multi-size icon, picking the size the tray wants.
@@ -172,7 +176,7 @@ public partial class App : Application
                 var game = GameWindowFinder.Find();
                 // LS drops its scaling windows once the game loses focus, so read the state before the overlay steals it.
                 var scaling = _processService.IsScaling;
-                _overlay = new OverlayWindow(_settingsService, _processService, _config, _gamepad, _monitoring)
+                _overlay = new OverlayWindow(_settingsService, _processService, _config, _gamepad, _monitoring, _appSettings)
                 {
                     PreviousForegroundWindow = game,
                     InitialScaling = scaling,
