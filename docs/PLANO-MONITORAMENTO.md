@@ -9,7 +9,7 @@ Categoria "Monitoramento" no overlay do Game Plus, operável só com o controle,
 | Grupo | Métricas |
 |---|---|
 | CPU | temperatura, uso (%), frequência, consumo (W), tensão |
-| RAM | consumo, frequência |
+| RAM | uso em MB, frequência |
 | GPU | temperatura, uso (%), frequência, uso de VRAM, consumo (W), tensão |
 | FPS | FPS atual (com/sem gráfico), média (AVG), frametime (com/sem gráfico) |
 
