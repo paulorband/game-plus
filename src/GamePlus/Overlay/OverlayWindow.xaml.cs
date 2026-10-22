@@ -1,3 +1,4 @@
+using System.IO;
 using System.Windows;
 using GamePlus.Models;
 using GamePlus.Services;
@@ -15,6 +16,8 @@ public partial class OverlayWindow : Window
     private readonly GamepadService _gamepad;
     private readonly MonitoringService _monitoring;
     private readonly AppSettingsService _appSettings;
+    private readonly KeyboardShortcutService _shortcut;
+    private readonly ScreenshotService _screenshotService;
 
     private enum Category { LosslessScaling, Monitoring, Settings }
     private Category _category;
@@ -47,7 +50,9 @@ public partial class OverlayWindow : Window
         AppConfig config,
         GamepadService gamepad,
         MonitoringService monitoring,
-        AppSettingsService appSettings)
+        AppSettingsService appSettings,
+        KeyboardShortcutService shortcut,
+        ScreenshotService screenshotService)
     {
         Services.Log.Info("Overlay ctor: before InitializeComponent");
         InitializeComponent();
@@ -59,6 +64,8 @@ public partial class OverlayWindow : Window
         _gamepad = gamepad;
         _monitoring = monitoring;
         _appSettings = appSettings;
+        _shortcut = shortcut;
+        _screenshotService = screenshotService;
         _appSettings.Changed += OnAppSettingsChanged;
         ApplyScale();
         BuildFeatures();
@@ -74,7 +81,7 @@ public partial class OverlayWindow : Window
             PollScalingState();
         };
         ContentRendered += (_, _) => { Services.Log.Info("Overlay rendered"); GrabFocus(); };
-        Deactivated += (_, _) => { if (!_closing && DateTime.UtcNow - _openedAt < TimeSpan.FromSeconds(2) && _grabAttempts++ < 3) GrabFocus(); };
+        Deactivated += (_, _) => { if (!_closing && !_browsingFolder && DateTime.UtcNow - _openedAt < TimeSpan.FromSeconds(2) && _grabAttempts++ < 3) GrabFocus(); };
         Closing += (_, _) => _closing = true;
         Closed += (_, _) =>
         {
@@ -295,6 +302,44 @@ public partial class OverlayWindow : Window
         return _rows = rows;
     }
 
+    private static readonly string[] ShortcutOptions = ["", "Ctrl+Alt+G", "Ctrl+Shift+G", "Ctrl+Alt+O", "Ctrl+Alt+Home", "Ctrl+Alt+F10"];
+    private static readonly string[] ScreenshotShortcutOptions = ["", "Ctrl+Alt+PrintScreen", "Ctrl+Shift+PrintScreen", "Ctrl+Alt+F9", "Ctrl+Alt+Insert"];
+
+    // Opens a folder picker owned by this window (it is topmost, so an unowned dialog could render behind it).
+    private void BrowseScreenshotFolder()
+    {
+        var current = _screenshotService.ResolvedFolder();
+        using var dialog = new System.Windows.Forms.FolderBrowserDialog
+        {
+            Description = Loc.T("set.screenshot_folder.browse_title"),
+            UseDescriptionForTitle = true,
+            SelectedPath = Directory.Exists(current) ? current : "",
+        };
+        var owner = new Win32Window(new System.Windows.Interop.WindowInteropHelper(this).Handle);
+        _browsingFolder = true;
+        var result = dialog.ShowDialog(owner);
+        _browsingFolder = false;
+        if (result != System.Windows.Forms.DialogResult.OK) return;
+
+        _appSettings.Current.ScreenshotFolder = dialog.SelectedPath;
+        _appSettings.Save();
+        RefreshAll();
+    }
+
+    private sealed class Win32Window(IntPtr handle) : System.Windows.Forms.IWin32Window
+    {
+        public IntPtr Handle { get; } = handle;
+    }
+
+    // "C:\Users\paulo\Pictures\Game Plus" -> "…\Pictures\Game Plus": the tail is what tells folders apart.
+    private static string ShortenPath(string path)
+    {
+        var trimmed = path.TrimEnd('\\');
+        var name = Path.GetFileName(trimmed);
+        var parent = Path.GetFileName(Path.GetDirectoryName(trimmed) ?? "");
+        return string.IsNullOrEmpty(parent) ? name : $"…\\{parent}\\{name}";
+    }
+
     private List<SettingRow> BuildSettingsRows()
     {
         var s = _appSettings.Current;
@@ -317,6 +362,32 @@ public partial class OverlayWindow : Window
                 v => { s.StartInTray = v == "tray"; _appSettings.Save(); }, [Loc.T("set.start_mode.window"), Loc.T("set.start_mode.tray")]),
             new BoolSettingRow(Loc.T("set.tray_click"), () => s.TrayClickOpens, on => { s.TrayClickOpens = on; _appSettings.Save(); })
                 { Hint = Loc.T("set.tray_click.hint") },
+
+            // Presets keep it settable from the controller; any other combo can be typed into settings.json.
+            new EnumSettingRow(Loc.T("set.shortcut"), ShortcutOptions, () => s.KeyboardShortcut ?? "",
+                v => { s.KeyboardShortcut = v; _appSettings.Save(); },
+                ShortcutOptions.Select(o => o == "" ? Loc.T("common.off") : o).ToArray())
+            {
+                Section = Loc.T("set.section.shortcut"),
+                Hint = Loc.T("set.shortcut.hint"),
+                HintWhen = () => _shortcut.Failed(KeyboardShortcutService.SlotOverlay) ? Loc.T("set.shortcut.busy") : null,
+            },
+
+            new PathSettingRow(Loc.T("set.screenshot_folder"),
+                () => string.IsNullOrWhiteSpace(s.ScreenshotFolder) ? Loc.T("set.screenshot_folder.default") : ShortenPath(s.ScreenshotFolder!),
+                BrowseScreenshotFolder,
+                () => { s.ScreenshotFolder = null; _appSettings.Save(); })
+            {
+                Section = Loc.T("set.section.screenshot"),
+                Hint = Loc.T("set.screenshot_folder.hint"),
+            },
+            new EnumSettingRow(Loc.T("set.screenshot_shortcut"), ScreenshotShortcutOptions, () => s.ScreenshotShortcut ?? "",
+                v => { s.ScreenshotShortcut = v; _appSettings.Save(); },
+                ScreenshotShortcutOptions.Select(o => o == "" ? Loc.T("common.off") : o.Replace("PrintScreen", "PrtScn")).ToArray())
+            {
+                Hint = Loc.T("set.screenshot_shortcut.hint"),
+                HintWhen = () => _shortcut.Failed(KeyboardShortcutService.SlotScreenshot) ? Loc.T("set.shortcut.busy") : null,
+            },
         ];
     }
 
@@ -629,6 +700,7 @@ public partial class OverlayWindow : Window
     }
 
     private bool _closing;
+    private bool _browsingFolder;
     private readonly DateTime _openedAt = DateTime.UtcNow;
     private int _grabAttempts;
 

@@ -320,6 +320,27 @@ public sealed class DoubleSettingRow : SettingRow
 }
 
 
+/// <summary>A folder path shown as a stepper: right/A browses for a new one, left resets to the default.</summary>
+public sealed class PathSettingRow : SettingRow
+{
+    private readonly Func<string> _valueText;
+    private readonly Action _browse;
+    private readonly Action _reset;
+
+    public PathSettingRow(string label, Func<string> valueText, Action browse, Action reset) : base(label)
+    {
+        _valueText = valueText;
+        _browse = browse;
+        _reset = reset;
+    }
+
+    public override bool IsStepper => true;
+    public override string ValueText => _valueText();
+
+    public override void Increment() => _browse();
+    public override void Decrement() => _reset();
+}
+
 /// <summary>Screen-corner picker: a 3x3 grid (0 = top left ... 8 = bottom right); left/right walk through the cells.</summary>
 public sealed class PositionRow : SettingRow
 {

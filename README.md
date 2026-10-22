@@ -21,7 +21,7 @@ real, a lógica de controle/settings deste projeto pode ser reaproveitada.
 
 ## Como funciona
 
-- **Ligar/desligar (View + L3 no controle, por padrão):** o app lê o hotkey
+- **Ligar/desligar (Menu + L3 no controle, por padrão):** o app lê o hotkey
   configurado dentro do próprio Lossless Scaling (`Settings.xml → Hotkey` /
   `HotkeyModifierKeys`, hoje `F12`) e simula exatamente essa tecla via
   `SendInput`. É o mesmo mecanismo que o Lossless Scaling já espera, então
@@ -83,6 +83,8 @@ A categoria **Configurações** (terceiro item da barra lateral) guarda as prefe
 - **Idioma:** Português (Brasil) e English; por padrão segue o idioma do Windows.
 - **Iniciar com o Windows** e **Ao iniciar** (abrir a janela, que é o padrão, ou só na bandeja).
 - **Abrir com um clique na bandeja** (desligado: só o clique duplo abre).
+- **Atalho para abrir:** abre e fecha o Game Plus pelo teclado, de qualquer janela (até dentro do jogo). Padrão `Ctrl+Alt+G`; dá para trocar por outro atalho da lista ou desligar. Para uma combinação própria, edite `KeyboardShortcut` em `Data\settings.json` (ex.: `"Ctrl+Shift+F9"`; é preciso pelo menos um entre Ctrl, Alt, Shift e Win). Se outro programa já usa a combinação, o app avisa na própria linha.
+- **Captura de tela:** salva um PNG do monitor em foco (o monitor onde está a janela ativa — normalmente o jogo). Dispara pelo atalho de teclado (padrão `Ctrl+Alt+PrtScn`, mesmas regras do atalho acima) ou pelo combo do controle (View+R3, o mesmo padrão dos outros combos, configurável em `ScreenshotCombo` no `config.json`). A pasta padrão é `Imagens\Screenshots\GamePlus`; a linha "Pasta para salvar" abre um seletor de pasta (direita/A escolhe, esquerda volta ao padrão). Clicar na notificação de "captura salva" abre a pasta com o arquivo selecionado.
 
 ### Adicionar um idioma
 
@@ -133,14 +135,15 @@ Criado automaticamente na primeira execução, com os padrões:
   "PollIntervalMs": 16,
   "ComboHoldMs": 350,
   "ComboCooldownMs": 600,
-  "ToggleCombo": ["Back", "LeftThumb"],
+  "ToggleCombo": ["Start", "LeftThumb"],
   "OverlayCombo": ["Back", "Start"],
+  "ScreenshotCombo": ["Back", "RightThumb"],
   "LosslessScalingExePath": null,
   "AutoRestartOnSave": true
 }
 ```
 
-- `ToggleCombo` / `OverlayCombo`: nomes de botões XInput (`A`, `B`, `X`, `Y`,
+- `ToggleCombo` / `OverlayCombo` / `ScreenshotCombo`: nomes de botões XInput (`A`, `B`, `X`, `Y`,
   `Back`, `Start`, `LeftShoulder`, `RightShoulder`, `LeftThumb`, `RightThumb`,
   `DPadUp`, `DPadDown`, `DPadLeft`, `DPadRight`). Precisam ser mantidos juntos
   por `ComboHoldMs` para disparar.

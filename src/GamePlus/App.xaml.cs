@@ -1,3 +1,4 @@
+using System.IO;
 using System.Windows;
 using System.Windows.Forms;
 using GamePlus.Overlay;
@@ -15,10 +16,16 @@ public partial class App : Application
     private LosslessScalingProcessService _processService = null!;
     private AppSettingsService _appSettings = null!;
     private GamepadService _gamepad = null!;
+    private KeyboardShortcutService _shortcut = null!;
+    private ScreenshotService _screenshotService = null!;
     private Services.Monitoring.MonitoringService _monitoring = null!;
     private NotifyIcon _trayIcon = null!;
     private OverlayWindow? _overlay;
     private EventWaitHandle? _showSignal;
+
+    // Set right before showing the "screenshot saved" balloon, so a click on THAT balloon (and only that one)
+    // opens the folder; cleared before every other balloon so an unrelated click doesn't open Explorer.
+    private string? _screenshotBalloonPath;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -76,10 +83,16 @@ public partial class App : Application
         _monitoring = new Services.Monitoring.MonitoringService(new MonitoringConfigService());
         _monitoring.Start();
 
+        _screenshotService = new ScreenshotService(_appSettings);
+
         _gamepad = new GamepadService(_config);
         _gamepad.ToggleComboTriggered += OnToggleComboTriggered;
         _gamepad.OverlayComboTriggered += OnOverlayComboTriggered;
+        _gamepad.ScreenshotComboTriggered += TakeScreenshot;
         _gamepad.Start();
+
+        _shortcut = new KeyboardShortcutService();
+        ApplyShortcuts();
 
         SetupTrayIcon();
 
@@ -87,6 +100,7 @@ public partial class App : Application
         {
             // LS only reads Settings.xml at startup, so a running instance must be relaunched to pick up the copy.
             if (_processService.IsRunning) _processService.RestartIfRunning(_config);
+            _screenshotBalloonPath = null;
             _trayIcon.ShowBalloonTip(2000, "Lossless Scaling", Loc.T("tray.local_applied"), ToolTipIcon.None);
         }
 
@@ -102,6 +116,43 @@ public partial class App : Application
     {
         ThemeManager.Apply(_appSettings.Current.Theme, _appSettings.Current.PanelOpacity);
         Loc.Instance.Select(_appSettings.Current.Language);
+        ApplyShortcuts();
+    }
+
+    private void ApplyShortcuts()
+    {
+        if (_shortcut is null) return;
+        _shortcut.Apply(KeyboardShortcutService.SlotOverlay, _appSettings.Current.KeyboardShortcut, ToggleOverlay);
+        _shortcut.Apply(KeyboardShortcutService.SlotScreenshot, _appSettings.Current.ScreenshotShortcut, TakeScreenshot);
+    }
+
+    private void TakeScreenshot()
+    {
+        try
+        {
+            var path = _screenshotService.Capture();
+            _screenshotBalloonPath = path;
+            _trayIcon.ShowBalloonTip(2000, "Game Plus", Loc.T("tray.screenshot_saved", Path.GetFileName(path)), ToolTipIcon.None);
+        }
+        catch (Exception ex)
+        {
+            Log.Error("TakeScreenshot", ex);
+            _screenshotBalloonPath = null;
+            _trayIcon.ShowBalloonTip(4000, "Game Plus", Loc.T("tray.screenshot_failed", ex.Message), ToolTipIcon.Error);
+        }
+    }
+
+    // Opens Explorer with the screenshot pre-selected, like Windows' own "show in folder" actions.
+    private static void OpenScreenshotFolder(string path)
+    {
+        try
+        {
+            System.Diagnostics.Process.Start("explorer.exe", $"/select,\"{path}\"");
+        }
+        catch (Exception ex)
+        {
+            Log.Error("OpenScreenshotFolder", ex);
+        }
     }
 
     private ToolStripMenuItem _openItem = null!, _startupItem = null!, _exitItem = null!;
@@ -142,6 +193,8 @@ public partial class App : Application
         // One click opens by default (a tray icon is a button, not a file); the setting restores the classic double click.
         _trayIcon.MouseClick += (_, args) => { if (args.Button == MouseButtons.Left && _appSettings.Current.TrayClickOpens) ShowOverlay(); };
         _trayIcon.DoubleClick += (_, _) => { if (!_appSettings.Current.TrayClickOpens) ShowOverlay(); };
+        // Clicking the "screenshot saved" notification opens the file's folder, like Windows' own screenshot tools.
+        _trayIcon.BalloonTipClicked += (_, _) => { if (_screenshotBalloonPath is { } path) OpenScreenshotFolder(path); };
     }
 
     // Uses the exe's embedded multi-size icon, picking the size the tray wants.
@@ -166,10 +219,12 @@ public partial class App : Application
             var settings = _settingsService.Load();
             var (key, modifiers) = LosslessScalingSettingsService.ParseHotkey(settings);
             HotkeyInputSender.SendHotkey(key, modifiers);
+            _screenshotBalloonPath = null;
             _trayIcon.ShowBalloonTip(1000, "Lossless Scaling", Loc.T("tray.toggled"), ToolTipIcon.None);
         }
         catch (Exception ex)
         {
+            _screenshotBalloonPath = null;
             _trayIcon.ShowBalloonTip(2000, "Game Plus", Loc.T("tray.toggle_failed", ex.Message), ToolTipIcon.Error);
         }
     }
@@ -199,7 +254,7 @@ public partial class App : Application
                 var game = GameWindowFinder.Find();
                 // LS drops its scaling windows once the game loses focus, so read the state before the overlay steals it.
                 var scaling = _processService.IsScaling;
-                _overlay = new OverlayWindow(_settingsService, _processService, _config, _gamepad, _monitoring, _appSettings)
+                _overlay = new OverlayWindow(_settingsService, _processService, _config, _gamepad, _monitoring, _appSettings, _shortcut, _screenshotService)
                 {
                     PreviousForegroundWindow = game,
                     InitialScaling = scaling,
@@ -215,6 +270,7 @@ public partial class App : Application
         catch (Exception ex)
         {
             Log.Error("ShowOverlay", ex);
+            _screenshotBalloonPath = null;
             _trayIcon.ShowBalloonTip(4000, "Game Plus", Loc.T("tray.overlay_failed", ex.Message), ToolTipIcon.Error);
             _overlay = null;
         }
@@ -224,6 +280,7 @@ public partial class App : Application
     {
         _monitoring?.Dispose();
         _gamepad?.Dispose();
+        _shortcut?.Dispose();
         if (_trayIcon is not null) _trayIcon.Visible = false;
         _trayIcon?.Dispose();
         base.OnExit(e);

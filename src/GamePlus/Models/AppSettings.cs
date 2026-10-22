@@ -23,4 +23,13 @@ public sealed class AppSettings
 
     /// <summary>A single click on the tray icon opens the app (otherwise a double click does).</summary>
     public bool TrayClickOpens { get; set; } = true;
+
+    /// <summary>Global keyboard shortcut that opens/closes the overlay, e.g. "Ctrl+Alt+G"; empty = off.</summary>
+    public string KeyboardShortcut { get; set; } = "Ctrl+Alt+G";
+
+    /// <summary>Where screenshots are saved; null/empty = the Screenshots folder next to the exe.</summary>
+    public string? ScreenshotFolder { get; set; }
+
+    /// <summary>Global keyboard shortcut that takes a screenshot; empty = off.</summary>
+    public string ScreenshotShortcut { get; set; } = "Ctrl+Alt+PrintScreen";
 }

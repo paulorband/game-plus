@@ -151,6 +151,17 @@
   "set.start_mode.tray": "Tray only",
   "set.tray_click": "Open with a single tray click",
   "set.tray_click.hint": "Off: only a double click opens",
+  "set.section.shortcut": "Keyboard",
+  "set.shortcut": "Shortcut to open",
+  "set.shortcut.hint": "Opens and closes Game Plus from any window, even in a game",
+  "set.shortcut.busy": "Another program already uses this shortcut. Pick a different one",
+  "set.section.screenshot": "Screenshot",
+  "set.screenshot_folder": "Save folder",
+  "set.screenshot_folder.default": "Default",
+  "set.screenshot_folder.hint": "Right: choose a folder · Left: reset to the default (Pictures\\Screenshots\\GamePlus)",
+  "set.screenshot_folder.browse_title": "Choose a folder for screenshots",
+  "set.screenshot_shortcut": "Shortcut to capture",
+  "set.screenshot_shortcut.hint": "Saves a PNG of the focused monitor, even in a game. Click the notification to open the folder",
 
   "tray.open": "Open settings",
   "tray.start_with_windows": "Start with Windows",
@@ -159,5 +170,7 @@
   "tray.toggled": "Toggled",
   "tray.toggle_failed": "Could not toggle: {0}",
   "tray.overlay_failed": "Could not open the overlay: {0}",
+  "tray.screenshot_saved": "Screenshot saved as {0}",
+  "tray.screenshot_failed": "Could not save the screenshot: {0}",
   "app.ls_settings_missing": "Could not find the Lossless Scaling Settings.xml at:\n{0}\n\nOpen Lossless Scaling at least once to generate the settings file, then restart this app."
 }

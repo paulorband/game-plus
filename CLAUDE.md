@@ -47,7 +47,7 @@ src/GamePlus/
   Models/
     AppConfig.cs              config.json (combos, intervalos, caminho do LS...)
     MonitoringConfig.cs       Data\monitoring.json (métricas ligadas, GPU, posição 0-8, tamanho) + MetricKeys
-    AppSettings.cs            Data\settings.json (tema, idioma, opacidade, escala, início, clique na bandeja)
+    AppSettings.cs            Data\settings.json (tema, idioma, opacidade, escala, início, clique na bandeja, atalhos, pasta de capturas)
     LosslessScalingSettings.cs  modelo do Settings.xml do LS (XmlSerializer)
   Services/                   lógica sem UI
     GamepadService.cs         polling XInput, eventos de botão e combos
@@ -56,6 +56,8 @@ src/GamePlus/
     GameWindowFinder.cs       escolhe a janela do jogo para devolver o foco
     MonitoringConfigService.cs  lê/grava Data\monitoring.json
     AppSettingsService.cs     Data\settings.json + evento Changed (tudo que é global reage a ele)
+    KeyboardShortcutService.cs  atalhos globais de teclado (RegisterHotKey, vários slots): abrir o overlay, capturar a tela
+    ScreenshotService.cs      captura todos os monitores em PNG na pasta configurada
     Localization.cs           Loc: textos da UI por idioma (JSON), indexador com atualização ao vivo
     Monitoring/               monitoramento (Afterburner + RTSS), sem UI
       MahmReader.cs           sensores do Afterburner (memória compartilhada MAHM, somente leitura)
@@ -94,6 +96,7 @@ Tipos de linha (`Overlay/SettingRow.cs`):
 | `EnumSettingRow` | segmentado (≤3 opções) ou stepper `‹ valor ›` | valores de enum |
 | `BoolSettingRow` | toggle | liga/desliga |
 | `IntSettingRow` / `DoubleSettingRow` | stepper ou slider (`slider: true`) | números com min/max/passo |
+| `PathSettingRow` | stepper (`‹ valor ›`) | pasta: direita/A chama uma ação (`Increment`, ex. abrir diálogo), esquerda restaura o padrão (`Decrement`) |
 
 **Para adicionar uma configuração** em uma categoria existente: crie a linha em `RebuildRows()`
 (`OverlayWindow.xaml.cs`) e informe a `Section`/`Hint`/`EnabledWhen` se precisar. Não crie XAML novo para tipos que já existem.
@@ -112,9 +115,9 @@ Regras visuais:
 ## Controle: regras que não podem quebrar
 
 Mapeamento no overlay: D-Pad ou analógico esquerdo (virtual D-Pad em `GamepadService`, com histerese e um eixo por vez) ↑↓ move a seleção com volta circular e repetição ao segurar, ←→ altera o valor (em campos com mais de 2 valores, segurar só pré-visualiza: `Preview`/`Commit` na linha, aplicado ao soltar; A e teclado aplicam na hora), **A** confirma/aumenta, **B** fecha, **X** reinicia o LS,
-**Y** salva, **LB/RB** troca de categoria, **LT/RT** troca de perfil do LS (os gatilhos viram botões `LeftTrigger`/`RightTrigger` em `GamepadService`). Combos globais (`config.json`): `ToggleCombo` = View+L3, `OverlayCombo` = View+Menu.
+**Y** salva, **LB/RB** troca de categoria, **LT/RT** troca de perfil do LS (os gatilhos viram botões `LeftTrigger`/`RightTrigger` em `GamepadService`). Combos globais (`config.json`): `ToggleCombo` = Menu+L3, `OverlayCombo` = View+Menu, `ScreenshotCombo` = View+R3 — cada um usa um botão de cada lado (polegar esquerdo + direito), View+L3 foi trocado por Menu+L3 por serem os dois do mesmo lado (mesmo polegar) e difíceis de segurar juntos.
 
-1. **Combos disparam uma vez por aperto** (latch até soltar). Segurar não pode repetir a ação.
+1. **Combos disparam uma vez por aperto** (latch até soltar). Segurar não pode repetir a ação. A detecção tolera até 90 ms sem ver o combo (`ComboGraceMs` em `GamepadService`), para uma leitura perdida (Bluetooth, jitter de polling) não resetar a contagem de um combo que está sendo segurado corretamente; cada início/disparo/soltura-antes-de-disparar de um combo vai para `Data\app.log`.
 2. **Fechar o overlay só depois de soltar os botões** (`CloseAfterReleaseAsync`): o jogo recupera o foco na hora e um botão ainda
    pressionado chegaria a ele como aperto novo. Qualquer novo fluxo que feche o overlay deve usar esse método.
 3. **Devolver o foco à janela do jogo** capturada ao abrir (`GameWindowFinder.Find()`), ignorando Explorer, bandeja, este app e o LS.
@@ -170,6 +173,8 @@ Categoria "Configurações" (`BuildSettingsRows`), gravada em `Data\settings.jso
 - **Escala** (`UiScale`, 75-150%): `LayoutTransform` no `Root` (920x580 de projeto) e janela com `SizeToContent`; `ApplyScale` limita ao tamanho da área de trabalho e recentraliza.
 - **Itens do menu lateral** (`HiddenFeatures`): a barra e a lista de "Itens do menu lateral" nascem do registro `_features` (`BuildFeatures` em `OverlayWindow`). Funcionalidade nova = valor em `Category` + uma entrada no registro (nome, ícone, `Active` para a bolinha, `Deactivate`) + construtor de linhas; barra, opção de ocultar e a regra "pelo menos um visível" vêm de graça. Ocultar chama `Deactivate` (LS: manda a hotkey se estiver escalando; Monitoramento: `Enabled=false`) e reexibir chama de novo, então o item sempre volta desligado. Configurações não é ocultável.
 - **Início**: padrão é abrir a janela ao iniciar (`StartInTray` = só bandeja; `--overlay` sempre abre). **Bandeja**: um clique abre (`TrayClickOpens`); desligado, só duplo clique.
+- **Atalho de teclado** (`KeyboardShortcut`, padrão `Ctrl+Alt+G`, vazio = desligado): `KeyboardShortcutService` registra um hotkey global numa janela só de mensagens (não depende de foco) e `App` liga o disparo a `ToggleOverlay`, como o combo do controle. `Apply` roda no início e a cada `Changed`. A linha das Configurações é uma lista de atalhos prontos (assim dá para escolher só com o controle); qualquer outra combinação (`Ctrl|Alt|Shift|Win` + nome de tecla do `System.Windows.Forms.Keys`) pode ser escrita à mão em `settings.json`. Exige ao menos um modificador. Se outro programa já usa a combinação, `Failed(id)` fica true e a linha mostra o aviso. `KeyboardShortcutService` tem um slot por atalho (`SlotOverlay`, `SlotScreenshot`); `App.ApplyShortcuts()` reaplica os dois a cada `Changed`.
+- **Captura de tela** (`ScreenshotFolder` vazio = `%userprofile%\Pictures\Screenshots\GamePlus`; `ScreenshotShortcut`, padrão `Ctrl+Alt+PrintScreen`): `ScreenshotService.Capture()` acha a janela em primeiro plano (`HotkeyInputSender.GetForegroundWindow()`) e captura só o monitor dela (`Screen.FromHandle`, com `Screen.PrimaryScreen` como reserva) num `Bitmap`, salvo como `GamePlus_aaaa-MM-dd_HH-mm-ss.png`; disparado pelo atalho de teclado e pelo combo do controle (`GamepadService.ScreenshotComboTriggered`, `ScreenshotCombo` em `config.json`, padrão View+R3). A pasta padrão é uma exceção deliberada à regra de portabilidade abaixo: fica no `Pictures\Screenshots` do Windows (mesma convenção de outras ferramentas de captura), não ao lado do exe. A linha "Pasta para salvar" (`PathSettingRow`) abre um `FolderBrowserDialog` dono da própria janela do overlay (`Win32Window` + `WindowInteropHelper`, necessário porque o overlay é `Topmost`); direita/A escolhe uma pasta, esquerda volta ao padrão. Clicar no balão de "captura salva" na bandeja abre a pasta com o arquivo selecionado (`App.OpenScreenshotFolder`, ligado só àquele balão via `_screenshotBalloonPath`).
 
 ## Instância única
 
@@ -178,7 +183,9 @@ Categoria "Configurações" (`BuildSettingsRows`), gravada em `Data\settings.jso
 ## Portabilidade e dados
 
 - **Tudo fica ao lado do `.exe`**: `config.json`, `Data\app.log`, `Data\LosslessScaling.Settings.xml` (cópia local das configs do LS).
-  Nada em `%AppData%`/`%LocalAppData%` (exceto a leitura única do local antigo, para migração).
+  Nada em `%AppData%`/`%LocalAppData%` (exceto a leitura única do local antigo, para migração). **Exceção deliberada**: capturas de
+  tela vão por padrão em `%userprofile%\Pictures\Screenshots\GamePlus` (não portátil), porque é onde o usuário espera achar
+  imagens, igual outras ferramentas de captura do Windows — configurável para qualquer pasta em Configurações.
 - Sincronização: vence o arquivo modificado por último entre o `Settings.xml` do LS e a cópia local (`SyncWithLocalCopy` no início).
   Copiar a pasta para outro PC aplica as mesmas configs. Novas funcionalidades que tenham configurações devem seguir o mesmo modelo
   (arquivo dentro de `Data\`, copiável com a pasta).

@@ -15,11 +15,17 @@ public sealed class GamepadService : IDisposable
     private GamepadButton _previousButtons;
     private readonly GamepadButton _toggleCombo;
     private readonly GamepadButton _overlayCombo;
+    private readonly GamepadButton _screenshotCombo;
 
     private DateTime? _toggleHeldSince;
     private DateTime? _overlayHeldSince;
+    private DateTime? _screenshotHeldSince;
+    private DateTime? _toggleLastSeenHeld;
+    private DateTime? _overlayLastSeenHeld;
+    private DateTime? _screenshotLastSeenHeld;
     private DateTime _toggleCooldownUntil = DateTime.MinValue;
     private DateTime _overlayCooldownUntil = DateTime.MinValue;
+    private DateTime _screenshotCooldownUntil = DateTime.MinValue;
 
     public bool AnyControllerConnected { get; private set; }
 
@@ -41,11 +47,15 @@ public sealed class GamepadService : IDisposable
     /// <summary>Fires once the overlay combo has been held for the configured duration.</summary>
     public event Action? OverlayComboTriggered;
 
+    /// <summary>Fires once the screenshot combo has been held for the configured duration.</summary>
+    public event Action? ScreenshotComboTriggered;
+
     public GamepadService(AppConfig config)
     {
         _config = config;
         _toggleCombo = ParseCombo(config.ToggleCombo);
         _overlayCombo = ParseCombo(config.OverlayCombo);
+        _screenshotCombo = ParseCombo(config.ScreenshotCombo);
 
         _timer = new DispatcherTimer(DispatcherPriority.Send)
         {
@@ -83,8 +93,9 @@ public sealed class GamepadService : IDisposable
         RepeatDirections(buttons, pressedNow, now);
         foreach (var flag in Flags(_previousButtons & ~buttons)) ButtonReleased?.Invoke(flag);
 
-        EvaluateCombo(buttons, _toggleCombo, ref _toggleHeldSince, ref _toggleCooldownUntil, now, ToggleComboTriggered);
-        EvaluateCombo(buttons, _overlayCombo, ref _overlayHeldSince, ref _overlayCooldownUntil, now, OverlayComboTriggered);
+        EvaluateCombo(buttons, _toggleCombo, ref _toggleHeldSince, ref _toggleLastSeenHeld, ref _toggleCooldownUntil, now, "toggle", ToggleComboTriggered);
+        EvaluateCombo(buttons, _overlayCombo, ref _overlayHeldSince, ref _overlayLastSeenHeld, ref _overlayCooldownUntil, now, "overlay", OverlayComboTriggered);
+        EvaluateCombo(buttons, _screenshotCombo, ref _screenshotHeldSince, ref _screenshotLastSeenHeld, ref _screenshotCooldownUntil, now, "screenshot", ScreenshotComboTriggered);
 
         _previousButtons = buttons;
     }
@@ -119,12 +130,20 @@ public sealed class GamepadService : IDisposable
         }
     }
 
+    // A real controller occasionally drops a single poll's reading (Bluetooth packet loss, USB polling jitter),
+    // which would otherwise reset the hold timer and make a combo that IS being held correctly never reach
+    // ComboHoldMs. Tolerating a short gap since the combo was last seen fully held smooths that out without
+    // weakening the "must hold it together" requirement in any way a person would notice.
+    private const int ComboGraceMs = 90;
+
     private void EvaluateCombo(
         GamepadButton current,
         GamepadButton combo,
         ref DateTime? heldSince,
+        ref DateTime? lastSeenHeld,
         ref DateTime cooldownUntil,
         DateTime now,
+        string name,
         Action? trigger)
     {
         if (combo == GamepadButton.None)
@@ -133,12 +152,20 @@ public sealed class GamepadService : IDisposable
         }
 
         bool isHeld = (current & combo) == combo;
-        if (!isHeld)
+        if (isHeld)
         {
+            lastSeenHeld = now;
+        }
+        else if (lastSeenHeld is null || (now - lastSeenHeld.Value).TotalMilliseconds > ComboGraceMs)
+        {
+            if (heldSince is not null && heldSince != DateTime.MaxValue) Log.Info($"Gamepad combo '{name}' released before triggering");
             heldSince = null;
+            lastSeenHeld = null;
             return;
         }
+        // else: not held on this exact poll, but within grace of the last poll that saw it held — keep counting.
 
+        if (heldSince is null) Log.Info($"Gamepad combo '{name}' held, waiting {_config.ComboHoldMs}ms");
         heldSince ??= now;
 
         if (now < cooldownUntil)
@@ -151,6 +178,7 @@ public sealed class GamepadService : IDisposable
             cooldownUntil = now.AddMilliseconds(_config.ComboCooldownMs);
             // Latch until the combo is released, so holding the buttons fires only once.
             heldSince = DateTime.MaxValue;
+            Log.Info($"Gamepad combo '{name}' triggered");
             trigger?.Invoke();
         }
     }

@@ -12,11 +12,16 @@ public sealed class AppConfig
     public int ComboCooldownMs { get; set; } = 600;
 
     /// <summary>Buttons that must be held together to toggle scaling/frame generation.
-    /// Deliberately avoids A/B/X/Y/LB/RB/D-Pad, which the settings overlay uses for navigation.</summary>
-    public string[] ToggleCombo { get; set; } = ["Back", "LeftThumb"];
+    /// Deliberately avoids A/B/X/Y/LB/RB/D-Pad, which the settings overlay uses for navigation, and pairs
+    /// opposite-hand buttons (Start = right thumb, LeftThumb = left thumb): View+LeftThumb needs the same
+    /// thumb for both and is awkward to hold.</summary>
+    public string[] ToggleCombo { get; set; } = ["Start", "LeftThumb"];
 
     /// <summary>Buttons that must be held together to open/close the settings overlay.</summary>
     public string[] OverlayCombo { get; set; } = ["Back", "Start"];
+
+    /// <summary>Buttons that must be held together to take a screenshot.</summary>
+    public string[] ScreenshotCombo { get; set; } = ["Back", "RightThumb"];
 
     /// <summary>
     /// Optional explicit path to LosslessScaling.exe. Leave empty to auto-detect
